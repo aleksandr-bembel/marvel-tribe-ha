@@ -1,0 +1,293 @@
+# Пример конфигурации Home Assistant для Marvel Tribe
+# Скопируйте нужные секции в ваш configuration.yaml
+
+# Настройка логгера для отладки
+logger:
+  default: info
+  logs:
+    custom_components.marvel_tribe: debug
+
+# Уведомления
+notify:
+  - platform: persistent_notification
+    name: marvel_tribe_notifications
+
+# Группы для удобного управления
+group:
+  marvel_tribe_sensors:
+    name: "Marvel Tribe - Сенсоры"
+    entities:
+      - sensor.marvel_tribe_battery_level
+      - sensor.marvel_tribe_battery_voltage
+      - sensor.marvel_tribe_connection_status
+      - sensor.marvel_tribe_last_update
+      - sensor.marvel_tribe_device_time
+      - sensor.marvel_tribe_firmware_version
+      - sensor.marvel_tribe_ip_address
+      - sensor.marvel_tribe_wifi_ssid
+      - sensor.marvel_tribe_rgb_brightness
+      - sensor.marvel_tribe_lcd_brightness
+      - sensor.marvel_tribe_volume_key
+      - sensor.marvel_tribe_language
+      - sensor.marvel_tribe_auto_sleep_period
+      - sensor.marvel_tribe_active_alarms
+
+  marvel_tribe_switches:
+    name: "Marvel Tribe - Переключатели"
+    entities:
+      - switch.marvel_tribe_auto_sync_time
+      - switch.marvel_tribe_rgb_light
+      - switch.marvel_tribe_audio
+      - switch.marvel_tribe_auto_sleep
+
+  marvel_tribe_numbers:
+    name: "Marvel Tribe - Числовые настройки"
+    entities:
+      - number.marvel_tribe_rgb_brightness
+      - number.marvel_tribe_rgb_speed
+      - number.marvel_tribe_lcd_brightness
+      - number.marvel_tribe_volume_key
+      - number.marvel_tribe_volume_startup
+      - number.marvel_tribe_volume_alarm
+
+  marvel_tribe_selects:
+    name: "Marvel Tribe - Выбор режимов"
+    entities:
+      - select.marvel_tribe_rgb_effect
+
+  marvel_tribe_buttons:
+    name: "Marvel Tribe - Кнопки"
+    entities:
+      - button.marvel_tribe_sync_time
+      - button.marvel_tribe_ping_device
+      - button.marvel_tribe_refresh_data
+      - button.marvel_tribe_scan_wifi
+      - button.marvel_tribe_get_device_info
+
+  marvel_tribe_binary_sensors:
+    name: "Marvel Tribe - Двоичные сенсоры"
+    entities:
+      - binary_sensor.marvel_tribe_connected
+      - binary_sensor.marvel_tribe_charging
+      - binary_sensor.marvel_tribe_wifi_connected
+      - binary_sensor.marvel_tribe_rgb_enabled
+      - binary_sensor.marvel_tribe_audio_enabled
+      - binary_sensor.marvel_tribe_alarm_system
+      - binary_sensor.marvel_tribe_auto_sleep_active
+
+# Шаблоны для удобного доступа к данным
+template:
+  - sensor:
+      - name: "Marvel Tribe - Статус"
+        state: >
+          {% if is_state('binary_sensor.marvel_tribe_connected', 'on') %}
+            Подключено
+          {% else %}
+            Отключено
+          {% endif %}
+        icon: >
+          {% if is_state('binary_sensor.marvel_tribe_connected', 'on') %}
+            mdi:check-circle
+          {% else %}
+            mdi:alert-circle
+          {% endif %}
+
+      - name: "Marvel Tribe - Статус батареи"
+        state: >
+          {% set level = states('sensor.marvel_tribe_battery_level') | int(0) %}
+          {% set charging = is_state('binary_sensor.marvel_tribe_charging', 'on') %}
+          {% if charging %}
+            Заряжается ({{ level }}%)
+          {% else %}
+            {{ level }}%
+          {% endif %}
+        icon: >
+          {% set level = states('sensor.marvel_tribe_battery_level') | int(0) %}
+          {% set charging = is_state('binary_sensor.marvel_tribe_charging', 'on') %}
+          {% if charging %}
+            mdi:battery-charging
+          {% elif level > 80 %}
+            mdi:battery
+          {% elif level > 60 %}
+            mdi:battery-80
+          {% elif level > 40 %}
+            mdi:battery-60
+          {% elif level > 20 %}
+            mdi:battery-40
+          {% else %}
+            mdi:battery-20
+          {% endif %}
+
+      - name: "Marvel Tribe - Время на часах"
+        state: >
+          {{ states('sensor.marvel_tribe_device_time') }}
+        icon: mdi:clock
+
+      - name: "Marvel Tribe - RGB статус"
+        state: >
+          {% if is_state('binary_sensor.marvel_tribe_rgb_enabled', 'on') %}
+            {{ states('select.marvel_tribe_rgb_effect') }} ({{ states('number.marvel_tribe_rgb_brightness') }}%)
+          {% else %}
+            Выключена
+          {% endif %}
+        icon: >
+          {% if is_state('binary_sensor.marvel_tribe_rgb_enabled', 'on') %}
+            mdi:led-on
+          {% else %}
+            mdi:led-off
+          {% endif %}
+
+      - name: "Marvel Tribe - Система сна"
+        state: >
+          {% if is_state('binary_sensor.marvel_tribe_auto_sleep_active', 'on') %}
+            {{ states('sensor.marvel_tribe_auto_sleep_period') }}
+          {% else %}
+            Выключена
+          {% endif %}
+        icon: >
+          {% if is_state('binary_sensor.marvel_tribe_auto_sleep_active', 'on') %}
+            mdi:sleep
+          {% else %}
+            mdi:sleep-off
+          {% endif %}
+
+# История и статистика
+recorder:
+  include:
+    entities:
+      - sensor.marvel_tribe_battery_level
+      - sensor.marvel_tribe_battery_voltage
+      - sensor.marvel_tribe_connection_status
+      - number.marvel_tribe_rgb_brightness
+      - number.marvel_tribe_lcd_brightness
+      - binary_sensor.marvel_tribe_connected
+      - binary_sensor.marvel_tribe_charging
+      - binary_sensor.marvel_tribe_rgb_enabled
+      - binary_sensor.marvel_tribe_auto_sleep_active
+
+# История для дашборда
+history:
+  include:
+    entities:
+      - sensor.marvel_tribe_battery_level
+      - number.marvel_tribe_rgb_brightness
+      - number.marvel_tribe_lcd_brightness
+      - binary_sensor.marvel_tribe_connected
+      - binary_sensor.marvel_tribe_rgb_enabled
+      - sensor.marvel_tribe_active_alarms
+
+# Логи для отладки
+system_log:
+  fire_event: true
+  log_level: info
+
+# Уведомления о состоянии интеграции
+automation:
+  - alias: "Marvel Tribe - Уведомление о подключении"
+    trigger:
+      - platform: state
+        entity_id: binary_sensor.marvel_tribe_connected
+        to: "on"
+    action:
+      - service: notify.persistent_notification
+        data:
+          message: "Часы Marvel Tribe подключены к Home Assistant"
+          title: "Marvel Tribe"
+
+  - alias: "Marvel Tribe - Уведомление об отключении"
+    trigger:
+      - platform: state
+        entity_id: binary_sensor.marvel_tribe_connected
+        to: "off"
+        for: "00:01:00"
+    action:
+      - service: notify.persistent_notification
+        data:
+          message: "Потеряна связь с часами Marvel Tribe"
+          title: "Marvel Tribe"
+
+# Примеры сцен (базовые, так как большинство настроек пока не реализованы)
+scene:
+  - name: "Marvel Tribe - Синхронизация времени"
+    entities:
+      switch.marvel_tribe_auto_sync_time: on
+
+# Примеры скриптов (дополнение к examples/scripts.yaml)
+script:
+  quick_status_check:
+    alias: "Marvel Tribe - Быстрая проверка статуса"
+    sequence:
+      - service: notify.persistent_notification
+        data:
+          message: |
+            Статус Marvel Tribe:
+            Подключение: {{ states('binary_sensor.marvel_tribe_connected') }}
+            Статус соединения: {{ states('sensor.marvel_tribe_connection_status') }}
+            Батарея: {{ states('sensor.marvel_tribe_battery_level') }}%
+            Зарядка: {{ states('binary_sensor.marvel_tribe_charging') }}
+            Автосинхронизация: {{ states('switch.marvel_tribe_auto_sync_time') }}
+            Время устройства: {{ states('sensor.marvel_tribe_device_time') }}
+          title: "Marvel Tribe - Статус"
+
+# Настройки для мобильного приложения (если используется)
+mobile_app:
+  # Добавьте здесь настройки для push-уведомлений о Marvel Tribe
+
+# Интеграция с другими устройствами
+# Пример интеграции с умным домом
+input_boolean:
+  marvel_tribe_auto_mode:
+    name: "Marvel Tribe - Автоматический режим"
+    icon: mdi:auto-fix
+
+input_select:
+  marvel_tribe_theme:
+    name: "Marvel Tribe - Тема"
+    options:
+      - "Дневная"
+      - "Вечерняя" 
+      - "Ночная"
+      - "Вечеринка"
+      - "Пользовательская"
+    initial: "Дневная"
+    icon: mdi:palette
+
+# Пример интеграции с погодой
+weather:
+  - platform: template
+    name: "Marvel Tribe Weather"
+    condition_template: "{{ states('weather.home') }}"
+    temperature_template: "{{ state_attr('weather.home', 'temperature') }}"
+    humidity_template: "{{ state_attr('weather.home', 'humidity') }}"
+
+# Настройки для дашборда Lovelace
+lovelace:
+  mode: yaml
+  dashboards:
+    marvel_tribe:
+      title: "Marvel Tribe"
+      path: "marvel-tribe"
+      icon: mdi:watch
+      show_in_sidebar: true
+      filename: "marvel-tribe-dashboard.yaml"
+
+# Пример конфигурации для разработки
+# Раскомментируйте для отладки
+# http:
+#   use_x_forwarded_for: true
+#   trusted_proxies:
+#     - 192.168.0.0/24
+
+# homeassistant:
+#   customize:
+#     sensor.marvel_tribe_battery_level:
+#       friendly_name: "Уровень батареи"
+#       icon: mdi:battery
+#     
+#     sensor.marvel_tribe_connection_status:
+#       friendly_name: "Статус подключения"
+#       icon: mdi:wifi
+#     
+#     switch.marvel_tribe_auto_sync_time:
+#       friendly_name: "Автосинхронизация времени"
+#       icon: mdi:clock-sync

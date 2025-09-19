@@ -1,0 +1,7 @@
+{
+  "name": "Marvel Tribe",
+  "hacs": "1.6.0",
+  "domains": ["sensor", "binary_sensor", "switch", "button", "number", "select"],
+  "iot_class": "Local Push",
+  "homeassistant": "2023.1.0"
+}

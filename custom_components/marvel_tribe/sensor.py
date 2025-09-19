@@ -1,0 +1,395 @@
+"""Sensor platform for Marvel Tribe."""
+
+from __future__ import annotations
+
+import logging
+from datetime import datetime
+
+from homeassistant.components.sensor import SensorEntity, SensorStateClass, SensorDeviceClass
+from homeassistant.config_entries import ConfigEntry
+from homeassistant.const import PERCENTAGE, UnitOfElectricPotential, UnitOfTime
+from homeassistant.core import HomeAssistant
+from homeassistant.helpers.entity import DeviceInfo
+from homeassistant.helpers.entity_platform import AddEntitiesCallback
+
+from .const import DOMAIN, MANUFACTURER, DEVICE_MODEL, DEVICE_SW_VERSION
+from .coordinator import MarvelTribeDataUpdateCoordinator
+
+_LOGGER = logging.getLogger(__name__)
+
+
+async def async_setup_entry(
+    hass: HomeAssistant,
+    entry: ConfigEntry,
+    async_add_entities: AddEntitiesCallback,
+) -> None:
+    """Set up Marvel Tribe sensor based on a config entry."""
+    coordinator: MarvelTribeDataUpdateCoordinator = hass.data[DOMAIN][entry.entry_id]
+
+    sensors = [
+        MarvelTribeBatterySensor(coordinator, entry, "battery_level"),
+        MarvelTribeBatteryVoltageSensor(coordinator, entry, "battery_voltage"),
+        MarvelTribeConnectionStatusSensor(coordinator, entry, "connection_status"),
+        MarvelTribeLastUpdateSensor(coordinator, entry, "last_update"),
+        MarvelTribeDeviceTimeSensor(coordinator, entry, "device_time"),
+        # Новые сенсоры на основе реальных данных
+        MarvelTribeFirmwareVersionSensor(coordinator, entry, "firmware_version"),
+        MarvelTribeIPAddressSensor(coordinator, entry, "ip_address"),
+        MarvelTribeWiFiSSIDSensor(coordinator, entry, "wifi_ssid"),
+        MarvelTribeRGBBrightnessSensor(coordinator, entry, "rgb_brightness"),
+        MarvelTribeLCDBrightnessSensor(coordinator, entry, "lcd_brightness"),
+        MarvelTribeVolumeKeySensor(coordinator, entry, "volume_key"),
+        MarvelTribleLanguageSensor(coordinator, entry, "language"),
+        # Сенсоры для будильников и auto-sleep
+        MarvelTribeAutoSleepPeriodSensor(coordinator, entry, "auto_sleep_period"),
+        MarvelTribeActiveAlarmsSensor(coordinator, entry, "active_alarms"),
+    ]
+
+    async_add_entities(sensors)
+
+
+class MarvelTribeSensor(SensorEntity):
+    """Base class for Marvel Tribe sensors."""
+    
+    _attr_should_poll = False
+
+    def __init__(
+        self,
+        coordinator: MarvelTribeDataUpdateCoordinator,
+        entry: ConfigEntry,
+        sensor_type: str,
+    ) -> None:
+        """Initialize the sensor."""
+        self.coordinator = coordinator
+        self.entry = entry
+        self.sensor_type = sensor_type
+        self._attr_unique_id = f"{entry.data['host']}:{entry.data['port']}_{sensor_type}"
+        self._attr_device_info = DeviceInfo(
+            identifiers={(DOMAIN, f"{entry.data['host']}:{entry.data['port']}")},
+            name=entry.data["name"],
+            manufacturer=MANUFACTURER,
+            model=DEVICE_MODEL,
+            sw_version=DEVICE_SW_VERSION,
+        )
+
+    @property
+    def available(self) -> bool:
+        """Return if entity is available."""
+        return self.coordinator.last_update_success
+
+    async def async_added_to_hass(self) -> None:
+        """When entity is added to hass."""
+        await super().async_added_to_hass()
+        self.async_on_remove(
+            self.coordinator.async_add_listener(self.async_write_ha_state)
+        )
+
+
+class MarvelTribeBatterySensor(MarvelTribeSensor):
+    """Battery level sensor."""
+
+    _attr_name = "Battery Level"
+    _attr_native_unit_of_measurement = PERCENTAGE
+    _attr_device_class = SensorDeviceClass.BATTERY
+    _attr_state_class = SensorStateClass.MEASUREMENT
+    _attr_icon = "mdi:battery"
+
+    @property
+    def native_value(self) -> int | None:
+        """Return the battery level."""
+        data = self.coordinator.data
+        if data:
+            return data.get("battery_level")
+
+    @property
+    def extra_state_attributes(self) -> dict[str, str]:
+        """Return extra state attributes."""
+        data = self.coordinator.data or {}
+        return {
+            "charging": data.get("battery_charging", False),
+        }
+
+
+class MarvelTribeBatteryVoltageSensor(MarvelTribeSensor):
+    """Battery voltage sensor."""
+
+    _attr_name = "Battery Voltage"
+    _attr_native_unit_of_measurement = UnitOfElectricPotential.VOLT
+    _attr_device_class = SensorDeviceClass.VOLTAGE
+    _attr_state_class = SensorStateClass.MEASUREMENT
+    _attr_icon = "mdi:lightning-bolt"
+
+    @property
+    def native_value(self) -> float | None:
+        """Return the battery voltage."""
+        data = self.coordinator.data
+        if data:
+            voltage = data.get("battery_voltage")
+            if voltage is not None:
+                return voltage / 1000.0  # Convert mV to V
+
+
+class MarvelTribeConnectionStatusSensor(MarvelTribeSensor):
+    """Connection status sensor."""
+
+    _attr_name = "Connection Status"
+    _attr_icon = "mdi:wifi"
+
+    @property
+    def native_value(self) -> str | None:
+        """Return the connection status."""
+        data = self.coordinator.data
+        if data:
+            return data.get("status", "unknown")
+
+    @property
+    def extra_state_attributes(self) -> dict[str, bool]:
+        """Return extra state attributes."""
+        data = self.coordinator.data or {}
+        return {
+            "connected": data.get("connected", False),
+            "ping_successful": data.get("ping_successful", False),
+        }
+
+
+class MarvelTribeLastUpdateSensor(MarvelTribeSensor):
+    """Last update timestamp sensor."""
+
+    _attr_name = "Last Update"
+    _attr_icon = "mdi:clock"
+
+    @property
+    def native_value(self) -> str | None:
+        """Return the last update time."""
+        data = self.coordinator.data
+        if data:
+            return data.get("last_update")
+
+    @property
+    def extra_state_attributes(self) -> dict[str, str]:
+        """Return extra state attributes."""
+        data = self.coordinator.data or {}
+        return {
+            "last_ping": data.get("last_ping", ""),
+        }
+
+
+class MarvelTribeDeviceTimeSensor(MarvelTribeSensor):
+    """Device time sensor."""
+
+    _attr_name = "Device Time"
+    _attr_icon = "mdi:clock-outline"
+
+    @property
+    def native_value(self) -> str | None:
+        """Return the device time."""
+        data = self.coordinator.data
+        if data:
+            return data.get("device_time")
+
+    @property
+    def extra_state_attributes(self) -> dict[str, str]:
+        """Return extra state attributes."""
+        data = self.coordinator.data or {}
+        return {
+            "timezone": data.get("timezone", ""),
+        }
+
+
+class MarvelTribeFirmwareVersionSensor(MarvelTribeSensor):
+    """Firmware version sensor."""
+
+    _attr_name = "Firmware Version"
+    _attr_icon = "mdi:chip"
+
+    @property
+    def native_value(self) -> str | None:
+        """Return the firmware version."""
+        data = self.coordinator.data
+        if data:
+            return data.get("firmware_version")
+
+
+class MarvelTribeIPAddressSensor(MarvelTribeSensor):
+    """IP address sensor."""
+
+    _attr_name = "IP Address"
+    _attr_icon = "mdi:ip-network"
+
+    @property
+    def native_value(self) -> str | None:
+        """Return the IP address."""
+        data = self.coordinator.data
+        if data:
+            return data.get("ip_address")
+
+
+class MarvelTribeWiFiSSIDSensor(MarvelTribeSensor):
+    """WiFi SSID sensor."""
+
+    _attr_name = "WiFi SSID"
+    _attr_icon = "mdi:wifi"
+
+    @property
+    def native_value(self) -> str | None:
+        """Return the WiFi SSID."""
+        data = self.coordinator.data
+        if data:
+            return data.get("wifi_ssid")
+
+
+class MarvelTribeRGBBrightnessSensor(MarvelTribeSensor):
+    """RGB brightness sensor."""
+
+    _attr_name = "RGB Brightness"
+    _attr_native_unit_of_measurement = PERCENTAGE
+    _attr_state_class = SensorStateClass.MEASUREMENT
+    _attr_icon = "mdi:brightness-6"
+
+    @property
+    def native_value(self) -> int | None:
+        """Return the RGB brightness."""
+        data = self.coordinator.data
+        if data:
+            return data.get("rgb_brightness")
+
+    @property
+    def extra_state_attributes(self) -> dict[str, any]:
+        """Return extra state attributes."""
+        data = self.coordinator.data or {}
+        return {
+            "rgb_enabled": data.get("rgb_enabled", False),
+            "rgb_speed": data.get("rgb_speed", 0),
+            "rgb_effect": data.get("rgb_effect", 0),
+        }
+
+
+class MarvelTribeLCDBrightnessSensor(MarvelTribeSensor):
+    """LCD brightness sensor."""
+
+    _attr_name = "LCD Brightness"
+    _attr_native_unit_of_measurement = PERCENTAGE
+    _attr_state_class = SensorStateClass.MEASUREMENT
+    _attr_icon = "mdi:brightness-7"
+
+    @property
+    def native_value(self) -> int | None:
+        """Return the LCD brightness."""
+        data = self.coordinator.data
+        if data:
+            return data.get("lcd_brightness")
+
+    @property
+    def extra_state_attributes(self) -> dict[str, any]:
+        """Return extra state attributes."""
+        data = self.coordinator.data or {}
+        return {
+            "display_mode": data.get("display_mode", 0),
+            "language": data.get("language", "en"),
+        }
+
+
+class MarvelTribeVolumeKeySensor(MarvelTribeSensor):
+    """Volume key sensor."""
+
+    _attr_name = "Volume Key"
+    _attr_native_unit_of_measurement = PERCENTAGE
+    _attr_state_class = SensorStateClass.MEASUREMENT
+    _attr_icon = "mdi:volume-high"
+
+    @property
+    def native_value(self) -> int | None:
+        """Return the volume key level."""
+        data = self.coordinator.data
+        if data:
+            return data.get("volume_key")
+
+    @property
+    def extra_state_attributes(self) -> dict[str, any]:
+        """Return extra state attributes."""
+        data = self.coordinator.data or {}
+        return {
+            "audio_enabled": data.get("audio_enabled", False),
+            "volume_startup": data.get("volume_startup", 0),
+            "volume_alarm": data.get("volume_alarm", 0),
+        }
+
+
+class MarvelTribleLanguageSensor(MarvelTribeSensor):
+    """Language sensor."""
+
+    _attr_name = "Language"
+    _attr_icon = "mdi:translate"
+
+    @property
+    def native_value(self) -> str | None:
+        """Return the language."""
+        data = self.coordinator.data
+        if data:
+            return data.get("language")
+
+
+class MarvelTribeAutoSleepPeriodSensor(MarvelTribeSensor):
+    """Auto-sleep period sensor."""
+
+    _attr_name = "Auto Sleep Period"
+    _attr_icon = "mdi:sleep"
+
+    @property
+    def native_value(self) -> str | None:
+        """Return the auto-sleep period."""
+        data = self.coordinator.data
+        if data and data.get("auto_sleep_enabled", False):
+            start = data.get("auto_sleep_start", "00:00")
+            end = data.get("auto_sleep_end", "00:00")
+            return f"{start} - {end}"
+        return "Disabled"
+
+    @property
+    def extra_state_attributes(self) -> dict[str, any]:
+        """Return extra state attributes."""
+        data = self.coordinator.data or {}
+        return {
+            "enabled": data.get("auto_sleep_enabled", False),
+            "start_time": data.get("auto_sleep_start", "00:00"),
+            "end_time": data.get("auto_sleep_end", "00:00"),
+        }
+
+
+class MarvelTribeActiveAlarmsSensor(MarvelTribeSensor):
+    """Active alarms sensor."""
+
+    _attr_name = "Active Alarms"
+    _attr_icon = "mdi:alarm-multiple"
+
+    @property
+    def native_value(self) -> int | None:
+        """Return the number of active alarms."""
+        data = self.coordinator.data
+        if data:
+            active_count = 0
+            for i in range(6):  # 6 alarm slots
+                if data.get(f"alarm_{i}_enabled", False):
+                    active_count += 1
+            return active_count
+        return 0
+
+    @property
+    def extra_state_attributes(self) -> dict[str, any]:
+        """Return extra state attributes."""
+        data = self.coordinator.data or {}
+        alarms_info = {}
+        
+        for i in range(6):
+            if data.get(f"alarm_{i}_enabled", False):
+                alarms_info[f"alarm_{i}"] = {
+                    "time": data.get(f"alarm_{i}_time", "00:00"),
+                    "repeat": data.get(f"alarm_{i}_repeat", False),
+                    "rgb_flash": data.get(f"alarm_{i}_rgb_flash", False),
+                    "days": data.get(f"alarm_{i}_days", []),
+                }
+        
+        return {
+            "system_enabled": data.get("alarm_system_enabled", False),
+            "active_alarms": alarms_info,
+        }

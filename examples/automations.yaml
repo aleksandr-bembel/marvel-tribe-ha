@@ -1,0 +1,241 @@
+# Примеры автоматизации для Marvel Tribe
+# Скопируйте нужные автоматизации в ваш файл automations.yaml
+
+# Включение автосинхронизации времени при заходе солнца
+- id: marvel_tribe_night_mode
+  alias: "Marvel Tribe - Ночной режим"
+  description: "Включает автосинхронизацию времени при заходе солнца"
+  trigger:
+    - platform: sun
+      event: sunset
+      offset: "-00:30:00"  # За 30 минут до захода солнца
+  action:
+    - service: switch.turn_on
+      entity_id: switch.marvel_tribe_auto_sync_time
+    - service: notify.persistent_notification
+      data:
+        message: "Автосинхронизация времени включена для ночного режима"
+        title: "Marvel Tribe"
+  mode: single
+
+# Еженедельная синхронизация времени
+- id: marvel_tribe_time_sync
+  alias: "Marvel Tribe - Синхронизация времени"
+  description: "Синхронизирует время часов каждое воскресенье в полночь"
+  trigger:
+    - platform: time
+      at: "00:00:00"
+    - platform: time_pattern
+      days: 0  # Воскресенье
+  action:
+    - service: button.press
+      entity_id: button.marvel_tribe_sync_time
+    - delay: "00:00:05"
+    - service: notify.persistent_notification
+      data:
+        message: "Время на часах Marvel Tribe синхронизировано"
+        title: "Marvel Tribe"
+  mode: single
+
+# Автоматическое обновление данных при переподключении
+- id: marvel_tribe_data_refresh
+  alias: "Marvel Tribe - Обновление данных"
+  description: "Обновляет данные при переподключении часов"
+  trigger:
+    - platform: state
+      entity_id: binary_sensor.marvel_tribe_connected
+      from: "off"
+      to: "on"
+  action:
+    - delay: "00:00:10"  # Ждем стабилизации соединения
+    - service: button.press
+      entity_id: button.marvel_tribe_refresh_data
+  mode: single
+
+# Уведомление о потере связи
+- id: marvel_tribe_connection_lost
+  alias: "Marvel Tribe - Потеря связи"
+  description: "Уведомляет о потере связи с часами"
+  trigger:
+    - platform: state
+      entity_id: binary_sensor.marvel_tribe_connected
+      to: "off"
+      for: "00:05:00"  # Через 5 минут после отключения
+  action:
+    - service: notify.mobile_app_your_phone
+      data:
+        message: "Потеряна связь с часами Marvel Tribe"
+        title: "Marvel Tribe - Внимание!"
+        data:
+          actions:
+            - action: "refresh_data"
+              title: "Обновить данные"
+  mode: single
+
+# Проверка статуса подключения по расписанию
+- id: marvel_tribe_status_check
+  alias: "Marvel Tribe - Проверка статуса"
+  description: "Проверяет статус подключения и отправляет ping"
+  trigger:
+    - platform: time_pattern
+      minutes: "/30"  # Каждые 30 минут
+  condition:
+    - condition: state
+      entity_id: binary_sensor.marvel_tribe_connected
+      state: "on"
+  action:
+    - service: button.press
+      entity_id: button.marvel_tribe_ping_device
+  mode: single
+
+# Ежедневная синхронизация времени
+- id: marvel_tribe_daily_sync
+  alias: "Marvel Tribe - Ежедневная синхронизация"
+  description: "Синхронизирует время каждый день в 2:00"
+  trigger:
+    - platform: time
+      at: "02:00:00"
+  condition:
+    - condition: state
+      entity_id: binary_sensor.marvel_tribe_connected
+      state: "on"
+  action:
+    - service: button.press
+      entity_id: button.marvel_tribe_sync_time
+    - delay: "00:00:10"
+    - service: notify.persistent_notification
+      data:
+        message: "Ежедневная синхронизация времени Marvel Tribe завершена"
+        title: "Marvel Tribe - Синхронизация"
+  mode: single
+
+# Уведомление о низком заряде батареи
+- id: marvel_tribe_low_battery
+  alias: "Marvel Tribe - Низкий заряд"
+  description: "Уведомляет о низком заряде батареи"
+  trigger:
+    - platform: numeric_state
+      entity_id: sensor.marvel_tribe_battery_level
+      below: 20
+      for: "00:05:00"
+  condition:
+    - condition: state
+      entity_id: binary_sensor.marvel_tribe_connected
+      state: "on"
+  action:
+    - service: notify.persistent_notification
+      data:
+        message: "Низкий заряд батареи часов Marvel Tribe ({{ states('sensor.marvel_tribe_battery_level') }}%)"
+        title: "Marvel Tribe - Батарея"
+  mode: single
+
+# Группировка действий для удобства
+- id: marvel_tribe_quick_actions
+  alias: "Marvel Tribe - Быстрые действия"
+  description: "Группа быстрых действий для управления часами"
+  trigger:
+    - platform: event
+      event_type: marvel_tribe_quick_action
+  action:
+    - choose:
+        - conditions:
+            - condition: template
+              value_template: "{{ trigger.event.data.action == 'sync_time' }}"
+          sequence:
+            - service: button.press
+              entity_id: button.marvel_tribe_sync_time
+        
+        - conditions:
+            - condition: template
+              value_template: "{{ trigger.event.data.action == 'ping' }}"
+          sequence:
+            - service: button.press
+              entity_id: button.marvel_tribe_ping_device
+        
+        - conditions:
+            - condition: template
+              value_template: "{{ trigger.event.data.action == 'refresh' }}"
+          sequence:
+            - service: button.press
+              entity_id: button.marvel_tribe_refresh_data
+        
+        - conditions:
+            - condition: template
+              value_template: "{{ trigger.event.data.action == 'auto_sync_on' }}"
+          sequence:
+            - service: switch.turn_on
+              entity_id: switch.marvel_tribe_auto_sync_time
+        
+        - conditions:
+            - condition: template
+              value_template: "{{ trigger.event.data.action == 'auto_sync_off' }}"
+          sequence:
+            - service: switch.turn_off
+              entity_id: switch.marvel_tribe_auto_sync_time
+  mode: single
+
+# Автоматическое управление RGB подсветкой
+- id: marvel_tribe_rgb_sunset
+  alias: "Marvel Tribe - RGB на закате"
+  description: "Включает RGB подсветку при заходе солнца"
+  trigger:
+    - platform: sun
+      event: sunset
+      offset: "-00:30:00"
+  condition:
+    - condition: state
+      entity_id: binary_sensor.marvel_tribe_connected
+      state: "on"
+  action:
+    - service: switch.turn_on
+      entity_id: switch.marvel_tribe_rgb_light
+    - service: select.select_option
+      entity_id: select.marvel_tribe_rgb_effect
+      data:
+        option: "Breath"
+    - service: number.set_value
+      entity_id: number.marvel_tribe_rgb_brightness
+      data:
+        value: 30
+  mode: single
+
+# Автоматическое управление яркостью дисплея
+- id: marvel_tribe_display_brightness
+  alias: "Marvel Tribe - Автояркость дисплея"
+  description: "Регулирует яркость дисплея по времени суток"
+  trigger:
+    - platform: time
+      at: "07:00:00"  # Утром
+    - platform: time
+      at: "22:00:00"  # Вечером
+  condition:
+    - condition: state
+      entity_id: binary_sensor.marvel_tribe_connected
+      state: "on"
+  action:
+    - service: number.set_value
+      entity_id: number.marvel_tribe_lcd_brightness
+      data:
+        value: >
+          {% if now().hour >= 22 or now().hour < 7 %}
+            15
+          {% else %}
+            80
+          {% endif %}
+  mode: single
+
+# Включение auto-sleep режима
+- id: marvel_tribe_enable_autosleep
+  alias: "Marvel Tribe - Включить auto-sleep"
+  description: "Включает режим auto-sleep на ночь"
+  trigger:
+    - platform: time
+      at: "21:30:00"
+  condition:
+    - condition: state
+      entity_id: binary_sensor.marvel_tribe_connected
+      state: "on"
+  action:
+    - service: switch.turn_on
+      entity_id: switch.marvel_tribe_auto_sleep
+  mode: single

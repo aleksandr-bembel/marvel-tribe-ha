@@ -1,0 +1,372 @@
+"""WebSocket client for Marvel Tribe communication."""
+
+from __future__ import annotations
+
+import asyncio
+import json
+import logging
+from typing import Any, Callable, Dict, Optional
+
+import websockets
+from websockets.exceptions import ConnectionClosed, WebSocketException
+
+from .const import WS_ENDPOINT
+
+_LOGGER = logging.getLogger(__name__)
+
+
+class MarvelTribeWebSocketClient:
+    """WebSocket client for Marvel Tribe communication."""
+
+    def __init__(self, host: str, port: int = 80):
+        """Initialize the WebSocket client."""
+        self.host = host
+        self.port = port
+        self.websocket: Optional[websockets.WebSocketServerProtocol] = None
+        self.connected = False
+        self.message_handlers: Dict[str, Callable] = {}
+        self._reconnect_task: Optional[asyncio.Task] = None
+        
+        # Protocol based on reverse engineering results
+        self.command_id = {
+            "log": 0,
+            "set_user_property": 1,
+            "get_user_property": 2,
+            "recovery": 3,
+            "file": 4,
+            "factory": 5,
+            "wifi": 6,
+            "ble": 7,
+            "characteristic": 8,
+            "audio": 9,
+        }
+        
+        self.command_wifi_id = {
+            "scan_ap": 0,
+            "scan_status": 1,
+            "ap_list": 2,
+            "wifi_status": 3,
+            "connect": 4,
+        }
+        
+        self.property_id = {
+            "operate": 0,
+            "all": 1,
+            "authorization": 2,
+            "time": 3,
+            "alarm": 4,
+            "sntp": 5,
+            "auto_sleep": 6,
+            "rgb_light": 7,
+            "wifi": 8,
+            "audio": 9,
+            "album": 10,
+            "weather": 11,
+            "others": 12,
+            "fans": 13,
+            "dst": 14,
+            "max": 15,
+        }
+
+    @property
+    def ws_url(self) -> str:
+        """Get WebSocket URL."""
+        return f"ws://{self.host}:{self.port}{WS_ENDPOINT}"
+
+    async def test_connection(self) -> bool:
+        """Test WebSocket connection."""
+        try:
+            async with websockets.connect(
+                self.ws_url, 
+                ping_interval=None,  # Disable ping for testing
+                close_timeout=5
+            ) as websocket:
+                # Send a test message to verify connection
+                test_message = {"type": "ping", "data": {}}
+                await websocket.send(json.dumps(test_message))
+                
+                # Try to receive a response
+                try:
+                    response = await asyncio.wait_for(websocket.recv(), timeout=5.0)
+                    _LOGGER.info("Test connection successful. Response: %s", response)
+                    return True
+                except asyncio.TimeoutError:
+                    _LOGGER.warning("No response to test message, but connection established")
+                    return True
+                    
+        except Exception as err:
+            _LOGGER.error("Test connection failed: %s", err)
+            raise
+
+    async def connect(self) -> bool:
+        """Connect to WebSocket."""
+        try:
+            self.websocket = await websockets.connect(
+                self.ws_url,
+                ping_interval=30,
+                ping_timeout=10,
+                close_timeout=10
+            )
+            self.connected = True
+            _LOGGER.info("Connected to Marvel Tribe at %s", self.ws_url)
+            
+            # Start listening for messages
+            if not self._reconnect_task:
+                self._reconnect_task = asyncio.create_task(self._listen())
+            
+            return True
+        except Exception as err:
+            _LOGGER.error("Failed to connect to Marvel Tribe: %s", err)
+            self.connected = False
+            return False
+
+    async def disconnect(self):
+        """Disconnect from WebSocket."""
+        self.connected = False
+        
+        if self._reconnect_task:
+            self._reconnect_task.cancel()
+            self._reconnect_task = None
+            
+        if self.websocket:
+            await self.websocket.close()
+            self.websocket = None
+
+    async def _listen(self):
+        """Listen for incoming messages."""
+        while self.connected and self.websocket:
+            try:
+                message = await self.websocket.recv()
+                await self._handle_message(message)
+            except ConnectionClosed:
+                _LOGGER.warning("WebSocket connection closed")
+                await self._handle_disconnect()
+                break
+            except WebSocketException as err:
+                _LOGGER.error("WebSocket error: %s", err)
+                await self._handle_disconnect()
+                break
+            except Exception as err:
+                _LOGGER.error("Unexpected error in _listen: %s", err)
+
+    async def _handle_message(self, message: str):
+        """Handle incoming message."""
+        try:
+            data = json.loads(message)
+            _LOGGER.debug("Received message: %s", data)
+            
+            # Handle Marvel Tribe protocol messages
+            if "command" in data:
+                # Send to Marvel Tribe response handler
+                if "marvel_tribe_data" in self.message_handlers:
+                    await self.message_handlers["marvel_tribe_data"](data)
+                
+                # Also handle specific protocol messages
+                command = data["command"]
+                await self._handle_protocol_message(command, data)
+            else:
+                # Fallback to old message handling
+                message_type = data.get("type", "unknown")
+                if message_type in self.message_handlers:
+                    await self.message_handlers[message_type](data)
+                else:
+                    _LOGGER.debug("Unhandled message type: %s", message_type)
+                
+        except json.JSONDecodeError:
+            _LOGGER.warning("Received non-JSON message: %s", message)
+        except Exception as err:
+            _LOGGER.error("Error handling message: %s", err)
+
+    async def _handle_protocol_message(self, command: int, data: dict):
+        """Handle Marvel Tribe protocol message."""
+        try:
+            if command == self.command_id["get_user_property"]:
+                await self._handle_device_properties(data)
+            elif command == self.command_id["wifi"]:
+                await self._handle_wifi_message(data)
+            elif command == self.command_id["characteristic"]:
+                await self._handle_device_characteristics(data)
+            elif command == self.command_id["factory"]:
+                await self._handle_factory_message(data)
+            else:
+                _LOGGER.debug("Unhandled protocol command: %s", command)
+        except Exception as err:
+            _LOGGER.error("Error handling protocol message: %s", err)
+
+    async def _handle_device_properties(self, data: dict):
+        """Handle device properties response."""
+        _LOGGER.debug("Device properties: %s", data)
+        # Process device configuration data
+        
+    async def _handle_wifi_message(self, data: dict):
+        """Handle WiFi related messages."""
+        _LOGGER.debug("WiFi message: %s", data)
+        # Process WiFi scan results, connection status, etc.
+        
+    async def _handle_device_characteristics(self, data: dict):
+        """Handle device characteristics."""
+        _LOGGER.debug("Device characteristics: %s", data)
+        # Process device info like screen size, style count, etc.
+        
+    async def _handle_factory_message(self, data: dict):
+        """Handle factory/OTA related messages."""
+        _LOGGER.debug("Factory message: %s", data)
+        # Process OTA updates, device info, etc.
+
+    async def _handle_disconnect(self):
+        """Handle disconnection."""
+        self.connected = False
+        if self.websocket:
+            try:
+                await self.websocket.close()
+            except Exception:
+                pass  # Ignore errors when closing
+            self.websocket = None
+        
+        # Implement reconnection logic if needed
+        _LOGGER.info("Connection lost. Attempting to reconnect in 5 seconds...")
+        await asyncio.sleep(5)
+        if not self.connected:
+            try:
+                await self.connect()
+            except Exception as err:
+                _LOGGER.error("Failed to reconnect: %s", err)
+
+    async def send_message(self, message_type: str, data: Dict[str, Any] = None) -> bool:
+        """Send a message to the device."""
+        if not self.connected or not self.websocket:
+            _LOGGER.error("Not connected to device")
+            return False
+
+        try:
+            message = {
+                "type": message_type,
+                "data": data or {}
+            }
+            await self.websocket.send(json.dumps(message))
+            _LOGGER.debug("Sent message: %s", message)
+            return True
+        except Exception as err:
+            _LOGGER.error("Failed to send message: %s", err)
+            return False
+
+    def register_message_handler(self, message_type: str, handler: Callable):
+        """Register a handler for a specific message type."""
+        self.message_handlers[message_type] = handler
+
+    async def send_protocol_command(self, command_type: str, **kwargs) -> bool:
+        """Send a protocol command to the device."""
+        if not self.connected or not self.websocket:
+            _LOGGER.error("Not connected to device")
+            return False
+
+        try:
+            message = {"command": self.command_id[command_type]}
+            message.update(kwargs)
+            
+            await self.websocket.send(json.dumps(message))
+            _LOGGER.debug("Sent protocol command %s: %s", command_type, message)
+            return True
+        except Exception as err:
+            _LOGGER.error("Failed to send protocol command: %s", err)
+            return False
+
+    async def send_wifi_command(self, wifi_command: str, **kwargs) -> bool:
+        """Send a WiFi command."""
+        if not self.connected or not self.websocket:
+            _LOGGER.error("Not connected to device")
+            return False
+
+        try:
+            message = {"command": self.command_id["wifi"]}
+            message[self.command_wifi_id[wifi_command]] = kwargs.get("data", 0)
+            
+            await self.websocket.send(json.dumps(message))
+            _LOGGER.debug("Sent WiFi command %s: %s", wifi_command, message)
+            return True
+        except Exception as err:
+            _LOGGER.error("Failed to send WiFi command: %s", err)
+            return False
+
+    async def send_property_command(self, command_type: str, property_name: str, data=None) -> bool:
+        """Send a property command (get/set)."""
+        if not self.connected or not self.websocket:
+            _LOGGER.error("Not connected to device")
+            return False
+
+        try:
+            message = {"command": self.command_id[command_type]}
+            
+            # For set commands, send the entire data object (not JSON string!)
+            if command_type == "set_user_property" and data:
+                message[self.property_id[property_name]] = data
+            else:
+                message[self.property_id[property_name]] = data if data is not None else "0"
+            
+            await self.websocket.send(json.dumps(message))
+            _LOGGER.debug("Sent property command %s/%s: %s", command_type, property_name, message)
+            return True
+        except Exception as err:
+            _LOGGER.error("Failed to send property command: %s", err)
+            return False
+
+    async def scan_wifi(self) -> bool:
+        """Scan for WiFi networks."""
+        return await self.send_wifi_command("scan_ap")
+
+    async def get_device_info(self) -> bool:
+        """Get device characteristics."""
+        return await self.send_protocol_command("characteristic")
+
+    async def get_all_properties(self) -> bool:
+        """Get all device properties."""
+        return await self.send_property_command("get_user_property", "all")
+
+    # Protocol methods - these will be refined during reverse engineering
+    async def ping(self) -> bool:
+        """Send ping message."""
+        try:
+            if not self.connected or not self.websocket:
+                _LOGGER.error("Not connected to device")
+                return False
+            
+            # Send a simple ping message - try different formats
+            ping_msg = {"ping": 1}
+            await self.websocket.send(json.dumps(ping_msg))
+            _LOGGER.debug("Sent ping message: %s", ping_msg)
+            return True
+        except Exception as err:
+            _LOGGER.error("Failed to send ping: %s", err)
+            return False
+
+    async def get_status(self) -> bool:
+        """Request device status."""
+        return await self.get_all_properties()
+
+    async def get_battery(self) -> bool:
+        """Request battery level."""
+        return await self.send_property_command("get_user_property", "operate")
+
+    async def get_time(self) -> bool:
+        """Request current time."""
+        return await self.send_property_command("get_user_property", "time")
+
+    async def set_time(self, timestamp: float) -> bool:
+        """Set device time."""
+        try:
+            if not self.connected or not self.websocket:
+                _LOGGER.error("Not connected to device")
+                return False
+            
+            # Send time setting command
+            time_msg = {
+                "command": self.command_id["set_user_property"],
+                "property": self.property_id["time"],
+                "value": int(timestamp)
+            }
+            await self.websocket.send(json.dumps(time_msg))
+            _LOGGER.debug("Sent time setting command: %s", time_msg)
+            return True
+        except Exception as err:
+            _LOGGER.error("Failed to set time: %s", err)
+            return False
