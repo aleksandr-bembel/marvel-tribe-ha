@@ -70,16 +70,12 @@ marvel_tribe/
 
 ## 📱 Доступные сущности
 
-После успешной настройки в Home Assistant появятся **37 сущностей** для полного управления часами:
+После успешной настройки в Home Assistant появятся **26 сущностей** для управления часами:
 
-### 📊 Сенсоры (14 штук)
-- `sensor.marvel_tribe_battery_level` - уровень заряда батареи (%)
-- `sensor.marvel_tribe_battery_voltage` - напряжение батареи (V)
+### 📊 Сенсоры (10 штук)
 - `sensor.marvel_tribe_connection_status` - статус подключения
-- `sensor.marvel_tribe_last_update` - время последнего обновления
 - `sensor.marvel_tribe_device_time` - время на устройстве
 - `sensor.marvel_tribe_firmware_version` - версия прошивки
-- `sensor.marvel_tribe_ip_address` - IP адрес устройства
 - `sensor.marvel_tribe_wifi_ssid` - название WiFi сети
 - `sensor.marvel_tribe_rgb_brightness` - яркость RGB подсветки
 - `sensor.marvel_tribe_lcd_brightness` - яркость LCD дисплея
@@ -105,16 +101,8 @@ marvel_tribe/
 ### 🎨 Выбор режимов (1 штука)
 - `select.marvel_tribe_rgb_effect` - RGB эффект (Rainbow/Flow/Breath/Mono)
 
-### 🔲 Кнопки (5 штук)
-- `button.marvel_tribe_sync_time` - синхронизация времени
-- `button.marvel_tribe_ping_device` - проверка связи с устройством
-- `button.marvel_tribe_refresh_data` - обновление данных
-- `button.marvel_tribe_scan_wifi` - сканирование WiFi сетей
-- `button.marvel_tribe_get_device_info` - получение информации об устройстве
-
-### 🔘 Двоичные сенсоры (7 штук)
-- `binary_sensor.marvel_tribe_connected` - статус подключения
-- `binary_sensor.marvel_tribe_charging` - статус зарядки
+### 🔘 Двоичные сенсоры (6 штук)
+- `binary_sensor.marvel_tribe_connected` - статус подключения к часам
 - `binary_sensor.marvel_tribe_wifi_connected` - статус WiFi подключения
 - `binary_sensor.marvel_tribe_rgb_enabled` - состояние RGB подсветки
 - `binary_sensor.marvel_tribe_audio_enabled` - состояние аудио

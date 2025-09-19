@@ -109,24 +109,20 @@
         title: "Marvel Tribe - Синхронизация"
   mode: single
 
-# Уведомление о низком заряде батареи
-- id: marvel_tribe_low_battery
-  alias: "Marvel Tribe - Низкий заряд"
-  description: "Уведомляет о низком заряде батареи"
+# Уведомление об отключении WiFi
+- id: marvel_tribe_wifi_disconnected
+  alias: "Marvel Tribe - WiFi отключен"
+  description: "Уведомляет об отключении WiFi"
   trigger:
-    - platform: numeric_state
-      entity_id: sensor.marvel_tribe_battery_level
-      below: 20
-      for: "00:05:00"
-  condition:
-    - condition: state
-      entity_id: binary_sensor.marvel_tribe_connected
-      state: "on"
+    - platform: state
+      entity_id: binary_sensor.marvel_tribe_wifi_connected
+      to: "off"
+      for: "00:02:00"
   action:
     - service: notify.persistent_notification
       data:
-        message: "Низкий заряд батареи часов Marvel Tribe ({{ states('sensor.marvel_tribe_battery_level') }}%)"
-        title: "Marvel Tribe - Батарея"
+        message: "WiFi соединение часов Marvel Tribe потеряно"
+        title: "Marvel Tribe - WiFi"
   mode: single
 
 # Группировка действий для удобства
@@ -140,38 +136,31 @@
     - choose:
         - conditions:
             - condition: template
-              value_template: "{{ trigger.event.data.action == 'sync_time' }}"
-          sequence:
-            - service: button.press
-              entity_id: button.marvel_tribe_sync_time
-        
-        - conditions:
-            - condition: template
-              value_template: "{{ trigger.event.data.action == 'ping' }}"
-          sequence:
-            - service: button.press
-              entity_id: button.marvel_tribe_ping_device
-        
-        - conditions:
-            - condition: template
-              value_template: "{{ trigger.event.data.action == 'refresh' }}"
-          sequence:
-            - service: button.press
-              entity_id: button.marvel_tribe_refresh_data
-        
-        - conditions:
-            - condition: template
-              value_template: "{{ trigger.event.data.action == 'auto_sync_on' }}"
+              value_template: "{{ trigger.event.data.action == 'rgb_on' }}"
           sequence:
             - service: switch.turn_on
-              entity_id: switch.marvel_tribe_auto_sync_time
+              entity_id: switch.marvel_tribe_rgb_light
         
         - conditions:
             - condition: template
-              value_template: "{{ trigger.event.data.action == 'auto_sync_off' }}"
+              value_template: "{{ trigger.event.data.action == 'rgb_off' }}"
           sequence:
             - service: switch.turn_off
-              entity_id: switch.marvel_tribe_auto_sync_time
+              entity_id: switch.marvel_tribe_rgb_light
+        
+        - conditions:
+            - condition: template
+              value_template: "{{ trigger.event.data.action == 'auto_sleep_on' }}"
+          sequence:
+            - service: switch.turn_on
+              entity_id: switch.marvel_tribe_auto_sleep
+        
+        - conditions:
+            - condition: template
+              value_template: "{{ trigger.event.data.action == 'auto_sleep_off' }}"
+          sequence:
+            - service: switch.turn_off
+              entity_id: switch.marvel_tribe_auto_sleep
   mode: single
 
 # Автоматическое управление RGB подсветкой

@@ -25,10 +25,10 @@ async def async_setup_entry(
     coordinator: MarvelTribeDataUpdateCoordinator = hass.data[DOMAIN][entry.entry_id]
 
     binary_sensors = [
+        # Основные статусы
         MarvelTribeConnectionBinarySensor(coordinator, entry, "connected"),
-        MarvelTribeChargingBinarySensor(coordinator, entry, "charging"),
-        # Новые binary sensors на основе реальных данных
         MarvelTribeWiFiConnectedBinarySensor(coordinator, entry, "wifi_connected"),
+        # Функциональные статусы
         MarvelTribeRGBEnabledBinarySensor(coordinator, entry, "rgb_enabled"),
         MarvelTribeAudioEnabledBinarySensor(coordinator, entry, "audio_enabled"),
         MarvelTribeAlarmSystemBinarySensor(coordinator, entry, "alarm_system"),
@@ -88,21 +88,6 @@ class MarvelTribeConnectionBinarySensor(MarvelTribeBinarySensor):
         data = self.coordinator.data
         if data:
             return data.get("connected", False)
-
-
-class MarvelTribeChargingBinarySensor(MarvelTribeBinarySensor):
-    """Charging status binary sensor."""
-
-    _attr_name = "Charging"
-    _attr_device_class = BinarySensorDeviceClass.BATTERY_CHARGING
-    _attr_icon = "mdi:battery-charging"
-
-    @property
-    def is_on(self) -> bool | None:
-        """Return if the device is charging."""
-        data = self.coordinator.data
-        if data:
-            return data.get("battery_charging", False)
 
 
 class MarvelTribeWiFiConnectedBinarySensor(MarvelTribeBinarySensor):

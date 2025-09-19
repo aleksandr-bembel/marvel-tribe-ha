@@ -1,17 +1,24 @@
 # Примеры скриптов для Marvel Tribe
 # Скопируйте нужные скрипты в ваш файл scripts.yaml
 
-# Обновление данных устройства
-refresh_device_data:
-  alias: "Marvel Tribe - Обновление данных"
-  description: "Обновляет все данные устройства"
+# Быстрая настройка RGB
+setup_rgb_evening:
+  alias: "Marvel Tribe - Вечерняя RGB"
+  description: "Настраивает RGB для вечернего времени"
   sequence:
-    - service: button.press
-      entity_id: button.marvel_tribe_refresh_data
-    - delay: "00:00:05"
+    - service: switch.turn_on
+      entity_id: switch.marvel_tribe_rgb_light
+    - service: select.select_option
+      entity_id: select.marvel_tribe_rgb_effect
+      data:
+        option: "Breath"
+    - service: number.set_value
+      entity_id: number.marvel_tribe_rgb_brightness
+      data:
+        value: 40
     - service: notify.persistent_notification
       data:
-        message: "Обновление данных Marvel Tribe завершено"
+        message: "Вечерняя RGB подсветка настроена"
         title: "Marvel Tribe"
 
 # Полная диагностика устройства
@@ -29,38 +36,23 @@ device_diagnostics:
       entity_id: binary_sensor.marvel_tribe_connected
       state: "on"
     
-    # Пинг устройства
-    - service: button.press
-      entity_id: button.marvel_tribe_ping_device
-    
+    # Проверяем основные статусы
     - delay: "00:00:02"
-    
-    # Синхронизируем время
-    - service: button.press
-      entity_id: button.marvel_tribe_sync_time
-    
-    - delay: "00:00:03"
-    
-    # Обновляем данные
-    - service: button.press
-      entity_id: button.marvel_tribe_refresh_data
-    
-    - delay: "00:00:05"
     
     # Уведомляем о завершении
     - service: notify.persistent_notification
       data:
         message: |
-          Диагностика завершена!
+          Диагностика Marvel Tribe:
           
-          Статус подключения: {{ states('binary_sensor.marvel_tribe_connected') }}
-          Статус соединения: {{ states('sensor.marvel_tribe_connection_status') }}
-          Батарея: {{ states('sensor.marvel_tribe_battery_level') }}%
-          Напряжение: {{ states('sensor.marvel_tribe_battery_voltage') }}V
-          Зарядка: {{ states('binary_sensor.marvel_tribe_charging') }}
-          Время устройства: {{ states('sensor.marvel_tribe_device_time') }}
-          Автосинхронизация: {{ states('switch.marvel_tribe_auto_sync_time') }}
-        title: "Marvel Tribe - Диагностика завершена"
+          Подключение: {{ states('binary_sensor.marvel_tribe_connected') }}
+          WiFi: {{ states('binary_sensor.marvel_tribe_wifi_connected') }} ({{ states('sensor.marvel_tribe_wifi_ssid') }})
+          RGB: {{ 'Включена' if is_state('binary_sensor.marvel_tribe_rgb_enabled', 'on') else 'Выключена' }}
+          Аудио: {{ 'Включено' if is_state('binary_sensor.marvel_tribe_audio_enabled', 'on') else 'Выключено' }}
+          Auto-Sleep: {{ 'Активен' if is_state('binary_sensor.marvel_tribe_auto_sleep_active', 'on') else 'Неактивен' }}
+          Будильники: {{ states('sensor.marvel_tribe_active_alarms') }}/6 активных
+          Прошивка: {{ states('sensor.marvel_tribe_firmware_version') }}
+        title: "Marvel Tribe - Диагностика"
 
 # Управление автосинхронизацией времени
 enable_auto_sync:
@@ -85,31 +77,40 @@ disable_auto_sync:
         message: "Автосинхронизация времени выключена"
         title: "Marvel Tribe"
 
-manual_sync:
-  alias: "Marvel Tribe - Ручная синхронизация"
-  description: "Выполняет ручную синхронизацию времени"
+setup_night_mode:
+  alias: "Marvel Tribe - Ночной режим"
+  description: "Настраивает часы для ночного времени"
   sequence:
-    - service: button.press
-      entity_id: button.marvel_tribe_sync_time
-    - delay: "00:00:03"
+    - service: switch.turn_on
+      entity_id: switch.marvel_tribe_auto_sleep
+    - service: number.set_value
+      entity_id: number.marvel_tribe_lcd_brightness
+      data:
+        value: 10
+    - service: switch.turn_off
+      entity_id: switch.marvel_tribe_rgb_light
     - service: notify.persistent_notification
       data:
-        message: "Время синхронизировано вручную 🕐"
+        message: "Ночной режим активирован 🌙"
         title: "Marvel Tribe"
 
-# Мониторинг батареи
-battery_status_check:
-  alias: "Marvel Tribe - Проверка батареи"
-  description: "Проверяет состояние батареи и уведомляет"
+# Проверка системного статуса
+system_status_check:
+  alias: "Marvel Tribe - Системный статус"
+  description: "Проверяет общий статус системы часов"
   sequence:
     - service: notify.persistent_notification
       data:
         message: |
-          Состояние батареи Marvel Tribe:
-          Уровень: {{ states('sensor.marvel_tribe_battery_level') }}%
-          Напряжение: {{ states('sensor.marvel_tribe_battery_voltage') }}V
-          Зарядка: {{ 'Да' if is_state('binary_sensor.marvel_tribe_charging', 'on') else 'Нет' }}
-        title: "Marvel Tribe - Батарея"
+          Системный статус Marvel Tribe:
+          
+          Подключение: {{ 'Активно' if is_state('binary_sensor.marvel_tribe_connected', 'on') else 'Отсутствует' }}
+          WiFi: {{ states('sensor.marvel_tribe_wifi_ssid') }}
+          RGB: {{ states('select.marvel_tribe_rgb_effect') }} ({{ states('number.marvel_tribe_rgb_brightness') }}%)
+          LCD: {{ states('number.marvel_tribe_lcd_brightness') }}%
+          Auto-Sleep: {{ states('sensor.marvel_tribe_auto_sleep_period') }}
+          Будильники: {{ states('sensor.marvel_tribe_active_alarms') }} активных
+        title: "Marvel Tribe - Статус"
 
 # Полная настройка устройства
 setup_device:
@@ -118,30 +119,21 @@ setup_device:
   sequence:
     - service: switch.turn_on
       entity_id: switch.marvel_tribe_auto_sync_time
-    - service: button.press
-      entity_id: button.marvel_tribe_sync_time
-    - delay: "00:00:03"
-    - service: button.press
-      entity_id: button.marvel_tribe_refresh_data
-    - delay: "00:00:05"
+    - service: switch.turn_on
+      entity_id: switch.marvel_tribe_rgb_light
+    - service: select.select_option
+      entity_id: select.marvel_tribe_rgb_effect
+      data:
+        option: "Flow"
+    - service: number.set_value
+      entity_id: number.marvel_tribe_rgb_brightness
+      data:
+        value: 50
+    - service: number.set_value
+      entity_id: number.marvel_tribe_lcd_brightness
+      data:
+        value: 70
     - service: notify.persistent_notification
       data:
         message: "Полная настройка устройства завершена! ✅"
         title: "Marvel Tribe"
-
-# Проверка соединения
-connection_test:
-  alias: "Marvel Tribe - Тест соединения"
-  description: "Тестирует соединение с устройством"
-  sequence:
-    - service: button.press
-      entity_id: button.marvel_tribe_ping_device
-    - delay: "00:00:02"
-    - service: notify.persistent_notification
-      data:
-        message: |
-          Тест соединения завершен:
-          Подключение: {{ 'Активно' if is_state('binary_sensor.marvel_tribe_connected', 'on') else 'Отсутствует' }}
-          Статус: {{ states('sensor.marvel_tribe_connection_status') }}
-          Последнее обновление: {{ states('sensor.marvel_tribe_last_update') }}
-        title: "Marvel Tribe - Тест соединения"

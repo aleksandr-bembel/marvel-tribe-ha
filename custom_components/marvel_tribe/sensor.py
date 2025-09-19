@@ -27,20 +27,20 @@ async def async_setup_entry(
     coordinator: MarvelTribeDataUpdateCoordinator = hass.data[DOMAIN][entry.entry_id]
 
     sensors = [
-        MarvelTribeBatterySensor(coordinator, entry, "battery_level"),
-        MarvelTribeBatteryVoltageSensor(coordinator, entry, "battery_voltage"),
+        # Основные сенсоры
         MarvelTribeConnectionStatusSensor(coordinator, entry, "connection_status"),
-        MarvelTribeLastUpdateSensor(coordinator, entry, "last_update"),
         MarvelTribeDeviceTimeSensor(coordinator, entry, "device_time"),
-        # Новые сенсоры на основе реальных данных
         MarvelTribeFirmwareVersionSensor(coordinator, entry, "firmware_version"),
-        MarvelTribeIPAddressSensor(coordinator, entry, "ip_address"),
+        # WiFi (только основное)
         MarvelTribeWiFiSSIDSensor(coordinator, entry, "wifi_ssid"),
+        # RGB и LCD мониторинг
         MarvelTribeRGBBrightnessSensor(coordinator, entry, "rgb_brightness"),
         MarvelTribeLCDBrightnessSensor(coordinator, entry, "lcd_brightness"),
+        # Аудио
         MarvelTribeVolumeKeySensor(coordinator, entry, "volume_key"),
+        # Система
         MarvelTribleLanguageSensor(coordinator, entry, "language"),
-        # Сенсоры для будильников и auto-sleep
+        # Будильники и auto-sleep
         MarvelTribeAutoSleepPeriodSensor(coordinator, entry, "auto_sleep_period"),
         MarvelTribeActiveAlarmsSensor(coordinator, entry, "active_alarms"),
     ]
@@ -85,50 +85,6 @@ class MarvelTribeSensor(SensorEntity):
         )
 
 
-class MarvelTribeBatterySensor(MarvelTribeSensor):
-    """Battery level sensor."""
-
-    _attr_name = "Battery Level"
-    _attr_native_unit_of_measurement = PERCENTAGE
-    _attr_device_class = SensorDeviceClass.BATTERY
-    _attr_state_class = SensorStateClass.MEASUREMENT
-    _attr_icon = "mdi:battery"
-
-    @property
-    def native_value(self) -> int | None:
-        """Return the battery level."""
-        data = self.coordinator.data
-        if data:
-            return data.get("battery_level")
-
-    @property
-    def extra_state_attributes(self) -> dict[str, str]:
-        """Return extra state attributes."""
-        data = self.coordinator.data or {}
-        return {
-            "charging": data.get("battery_charging", False),
-        }
-
-
-class MarvelTribeBatteryVoltageSensor(MarvelTribeSensor):
-    """Battery voltage sensor."""
-
-    _attr_name = "Battery Voltage"
-    _attr_native_unit_of_measurement = UnitOfElectricPotential.VOLT
-    _attr_device_class = SensorDeviceClass.VOLTAGE
-    _attr_state_class = SensorStateClass.MEASUREMENT
-    _attr_icon = "mdi:lightning-bolt"
-
-    @property
-    def native_value(self) -> float | None:
-        """Return the battery voltage."""
-        data = self.coordinator.data
-        if data:
-            voltage = data.get("battery_voltage")
-            if voltage is not None:
-                return voltage / 1000.0  # Convert mV to V
-
-
 class MarvelTribeConnectionStatusSensor(MarvelTribeSensor):
     """Connection status sensor."""
 
@@ -149,28 +105,6 @@ class MarvelTribeConnectionStatusSensor(MarvelTribeSensor):
         return {
             "connected": data.get("connected", False),
             "ping_successful": data.get("ping_successful", False),
-        }
-
-
-class MarvelTribeLastUpdateSensor(MarvelTribeSensor):
-    """Last update timestamp sensor."""
-
-    _attr_name = "Last Update"
-    _attr_icon = "mdi:clock"
-
-    @property
-    def native_value(self) -> str | None:
-        """Return the last update time."""
-        data = self.coordinator.data
-        if data:
-            return data.get("last_update")
-
-    @property
-    def extra_state_attributes(self) -> dict[str, str]:
-        """Return extra state attributes."""
-        data = self.coordinator.data or {}
-        return {
-            "last_ping": data.get("last_ping", ""),
         }
 
 
@@ -208,20 +142,6 @@ class MarvelTribeFirmwareVersionSensor(MarvelTribeSensor):
         data = self.coordinator.data
         if data:
             return data.get("firmware_version")
-
-
-class MarvelTribeIPAddressSensor(MarvelTribeSensor):
-    """IP address sensor."""
-
-    _attr_name = "IP Address"
-    _attr_icon = "mdi:ip-network"
-
-    @property
-    def native_value(self) -> str | None:
-        """Return the IP address."""
-        data = self.coordinator.data
-        if data:
-            return data.get("ip_address")
 
 
 class MarvelTribeWiFiSSIDSensor(MarvelTribeSensor):

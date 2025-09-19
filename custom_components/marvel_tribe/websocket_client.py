@@ -100,37 +100,53 @@ class MarvelTribeWebSocketClient:
 
     async def connect(self) -> bool:
         """Connect to WebSocket."""
+        # Clean up any existing connection
+        await self.disconnect()
+        
         try:
+            _LOGGER.info("Connecting to Marvel Tribe at %s", self.ws_url)
             self.websocket = await websockets.connect(
                 self.ws_url,
                 ping_interval=30,
                 ping_timeout=10,
-                close_timeout=10
+                close_timeout=5
             )
             self.connected = True
-            _LOGGER.info("Connected to Marvel Tribe at %s", self.ws_url)
+            _LOGGER.info("Successfully connected to Marvel Tribe")
             
             # Start listening for messages
-            if not self._reconnect_task:
-                self._reconnect_task = asyncio.create_task(self._listen())
+            self._reconnect_task = asyncio.create_task(self._listen())
             
             return True
         except Exception as err:
             _LOGGER.error("Failed to connect to Marvel Tribe: %s", err)
             self.connected = False
+            self.websocket = None
             return False
 
     async def disconnect(self):
         """Disconnect from WebSocket."""
+        _LOGGER.debug("Disconnecting from WebSocket...")
         self.connected = False
         
-        if self._reconnect_task:
+        # Cancel listen task
+        if self._reconnect_task and not self._reconnect_task.cancelled():
             self._reconnect_task.cancel()
+            try:
+                await self._reconnect_task
+            except asyncio.CancelledError:
+                pass
             self._reconnect_task = None
             
+        # Close websocket
         if self.websocket:
-            await self.websocket.close()
+            try:
+                await self.websocket.close()
+            except Exception as err:
+                _LOGGER.debug("Error closing websocket: %s", err)
             self.websocket = None
+        
+        _LOGGER.debug("WebSocket disconnected")
 
     async def _listen(self):
         """Listen for incoming messages."""
@@ -139,15 +155,17 @@ class MarvelTribeWebSocketClient:
                 message = await self.websocket.recv()
                 await self._handle_message(message)
             except ConnectionClosed:
-                _LOGGER.warning("WebSocket connection closed")
+                _LOGGER.info("WebSocket connection closed normally")
                 await self._handle_disconnect()
                 break
             except WebSocketException as err:
-                _LOGGER.error("WebSocket error: %s", err)
+                _LOGGER.warning("WebSocket error: %s", err)
                 await self._handle_disconnect()
                 break
             except Exception as err:
                 _LOGGER.error("Unexpected error in _listen: %s", err)
+                await self._handle_disconnect()
+                break
 
     async def _handle_message(self, message: str):
         """Handle incoming message."""
@@ -215,7 +233,15 @@ class MarvelTribeWebSocketClient:
 
     async def _handle_disconnect(self):
         """Handle disconnection."""
+        _LOGGER.info("Handling disconnection...")
         self.connected = False
+        
+        # Cancel the listen task if it exists
+        if self._reconnect_task and not self._reconnect_task.cancelled():
+            self._reconnect_task.cancel()
+            self._reconnect_task = None
+        
+        # Close websocket connection
         if self.websocket:
             try:
                 await self.websocket.close()
@@ -223,14 +249,8 @@ class MarvelTribeWebSocketClient:
                 pass  # Ignore errors when closing
             self.websocket = None
         
-        # Implement reconnection logic if needed
-        _LOGGER.info("Connection lost. Attempting to reconnect in 5 seconds...")
-        await asyncio.sleep(5)
-        if not self.connected:
-            try:
-                await self.connect()
-            except Exception as err:
-                _LOGGER.error("Failed to reconnect: %s", err)
+        # Don't automatically reconnect here - let coordinator handle it
+        _LOGGER.info("WebSocket disconnected. Coordinator will handle reconnection.")
 
     async def send_message(self, message_type: str, data: Dict[str, Any] = None) -> bool:
         """Send a message to the device."""

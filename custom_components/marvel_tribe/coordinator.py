@@ -47,9 +47,13 @@ class MarvelTribeDataUpdateCoordinator(DataUpdateCoordinator):
     async def _async_update_data(self):
         """Update data via WebSocket."""
         if not self.client.connected:
-            _LOGGER.debug("Client not connected, attempting to connect...")
-            if not await self.client.connect():
-                raise UpdateFailed("Failed to connect to Marvel Tribe")
+            _LOGGER.info("Client not connected, attempting to connect...")
+            try:
+                if not await self.client.connect():
+                    raise UpdateFailed("Failed to connect to Marvel Tribe")
+            except Exception as err:
+                _LOGGER.error("Connection failed: %s", err)
+                raise UpdateFailed(f"Connection failed: {err}")
 
         try:
             # Avoid too frequent requests using cache
@@ -83,8 +87,19 @@ class MarvelTribeDataUpdateCoordinator(DataUpdateCoordinator):
             return current_data
             
         except Exception as err:
-            _LOGGER.error("Error updating data: %s", err)
-            raise UpdateFailed(f"Error communicating with Marvel Tribe: {err}")
+            # If connection is lost, mark client as disconnected
+            if "connection" in str(err).lower() or "websocket" in str(err).lower():
+                self.client.connected = False
+                _LOGGER.warning("Connection lost during update: %s", err)
+            else:
+                _LOGGER.error("Error updating data: %s", err)
+            
+            # Return cached data if available, otherwise raise error
+            if self.data:
+                _LOGGER.debug("Returning cached data due to connection error")
+                return self.data
+            else:
+                raise UpdateFailed(f"Error communicating with Marvel Tribe: {err}")
 
     async def _handle_status(self, message: dict):
         """Handle status message."""

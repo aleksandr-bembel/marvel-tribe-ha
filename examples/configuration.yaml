@@ -17,13 +17,9 @@ group:
   marvel_tribe_sensors:
     name: "Marvel Tribe - Сенсоры"
     entities:
-      - sensor.marvel_tribe_battery_level
-      - sensor.marvel_tribe_battery_voltage
       - sensor.marvel_tribe_connection_status
-      - sensor.marvel_tribe_last_update
       - sensor.marvel_tribe_device_time
       - sensor.marvel_tribe_firmware_version
-      - sensor.marvel_tribe_ip_address
       - sensor.marvel_tribe_wifi_ssid
       - sensor.marvel_tribe_rgb_brightness
       - sensor.marvel_tribe_lcd_brightness
@@ -55,20 +51,10 @@ group:
     entities:
       - select.marvel_tribe_rgb_effect
 
-  marvel_tribe_buttons:
-    name: "Marvel Tribe - Кнопки"
-    entities:
-      - button.marvel_tribe_sync_time
-      - button.marvel_tribe_ping_device
-      - button.marvel_tribe_refresh_data
-      - button.marvel_tribe_scan_wifi
-      - button.marvel_tribe_get_device_info
-
   marvel_tribe_binary_sensors:
     name: "Marvel Tribe - Двоичные сенсоры"
     entities:
       - binary_sensor.marvel_tribe_connected
-      - binary_sensor.marvel_tribe_charging
       - binary_sensor.marvel_tribe_wifi_connected
       - binary_sensor.marvel_tribe_rgb_enabled
       - binary_sensor.marvel_tribe_audio_enabled
@@ -90,32 +76,6 @@ template:
             mdi:check-circle
           {% else %}
             mdi:alert-circle
-          {% endif %}
-
-      - name: "Marvel Tribe - Статус батареи"
-        state: >
-          {% set level = states('sensor.marvel_tribe_battery_level') | int(0) %}
-          {% set charging = is_state('binary_sensor.marvel_tribe_charging', 'on') %}
-          {% if charging %}
-            Заряжается ({{ level }}%)
-          {% else %}
-            {{ level }}%
-          {% endif %}
-        icon: >
-          {% set level = states('sensor.marvel_tribe_battery_level') | int(0) %}
-          {% set charging = is_state('binary_sensor.marvel_tribe_charging', 'on') %}
-          {% if charging %}
-            mdi:battery-charging
-          {% elif level > 80 %}
-            mdi:battery
-          {% elif level > 60 %}
-            mdi:battery-80
-          {% elif level > 40 %}
-            mdi:battery-60
-          {% elif level > 20 %}
-            mdi:battery-40
-          {% else %}
-            mdi:battery-20
           {% endif %}
 
       - name: "Marvel Tribe - Время на часах"
@@ -155,13 +115,10 @@ template:
 recorder:
   include:
     entities:
-      - sensor.marvel_tribe_battery_level
-      - sensor.marvel_tribe_battery_voltage
       - sensor.marvel_tribe_connection_status
       - number.marvel_tribe_rgb_brightness
       - number.marvel_tribe_lcd_brightness
       - binary_sensor.marvel_tribe_connected
-      - binary_sensor.marvel_tribe_charging
       - binary_sensor.marvel_tribe_rgb_enabled
       - binary_sensor.marvel_tribe_auto_sleep_active
 
@@ -169,7 +126,6 @@ recorder:
 history:
   include:
     entities:
-      - sensor.marvel_tribe_battery_level
       - number.marvel_tribe_rgb_brightness
       - number.marvel_tribe_lcd_brightness
       - binary_sensor.marvel_tribe_connected
