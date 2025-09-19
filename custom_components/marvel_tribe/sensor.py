@@ -325,7 +325,10 @@ class MarvelTribeLastUpdateSensor(MarvelTribeSensor):
     def extra_state_attributes(self) -> dict[str, any]:
         """Return extra state attributes."""
         data = self.coordinator.data or {}
+        last_update_time = getattr(self.coordinator, 'last_update_success', None)
         return {
-            "coordinator_last_update": self.coordinator.last_update_success_time.isoformat() if self.coordinator.last_update_success_time else None,
-            "data_age_seconds": (datetime.now() - self.coordinator.last_update_success_time).total_seconds() if self.coordinator.last_update_success_time else None,
+            "coordinator_last_update": last_update_time.isoformat() if last_update_time else None,
+            "data_age_seconds": (datetime.now() - last_update_time).total_seconds() if last_update_time else None,
+            "update_count": getattr(self.coordinator, 'update_count', 0),
+            "failed_count": getattr(self.coordinator, 'failed_count', 0),
         }
