@@ -17,16 +17,17 @@ group:
   marvel_tribe_sensors:
     name: "Marvel Tribe - Сенсоры"
     entities:
-      - sensor.marvel_tribe_connection_status
       - sensor.marvel_tribe_device_time
       - sensor.marvel_tribe_firmware_version
       - sensor.marvel_tribe_wifi_ssid
+      - sensor.marvel_tribe_ip_address
       - sensor.marvel_tribe_rgb_brightness
       - sensor.marvel_tribe_lcd_brightness
       - sensor.marvel_tribe_volume_key
       - sensor.marvel_tribe_language
       - sensor.marvel_tribe_auto_sleep_period
       - sensor.marvel_tribe_active_alarms
+      - sensor.marvel_tribe_last_update
 
   marvel_tribe_switches:
     name: "Marvel Tribe - Переключатели"
@@ -54,7 +55,6 @@ group:
   marvel_tribe_binary_sensors:
     name: "Marvel Tribe - Двоичные сенсоры"
     entities:
-      - binary_sensor.marvel_tribe_connected
       - binary_sensor.marvel_tribe_wifi_connected
       - binary_sensor.marvel_tribe_rgb_enabled
       - binary_sensor.marvel_tribe_audio_enabled
@@ -66,13 +66,13 @@ template:
   - sensor:
       - name: "Marvel Tribe - Статус"
         state: >
-          {% if is_state('binary_sensor.marvel_tribe_connected', 'on') %}
+          {% if is_state('binary_sensor.marvel_tribe_wifi_connected', 'on') %}
             Подключено
           {% else %}
             Отключено
           {% endif %}
         icon: >
-          {% if is_state('binary_sensor.marvel_tribe_connected', 'on') %}
+          {% if is_state('binary_sensor.marvel_tribe_wifi_connected', 'on') %}
             mdi:check-circle
           {% else %}
             mdi:alert-circle
@@ -118,7 +118,7 @@ recorder:
       - sensor.marvel_tribe_connection_status
       - number.marvel_tribe_rgb_brightness
       - number.marvel_tribe_lcd_brightness
-      - binary_sensor.marvel_tribe_connected
+      - binary_sensor.marvel_tribe_wifi_connected
       - binary_sensor.marvel_tribe_rgb_enabled
       - binary_sensor.marvel_tribe_auto_sleep_active
 
@@ -128,7 +128,7 @@ history:
     entities:
       - number.marvel_tribe_rgb_brightness
       - number.marvel_tribe_lcd_brightness
-      - binary_sensor.marvel_tribe_connected
+      - binary_sensor.marvel_tribe_wifi_connected
       - binary_sensor.marvel_tribe_rgb_enabled
       - sensor.marvel_tribe_active_alarms
 
@@ -142,7 +142,7 @@ automation:
   - alias: "Marvel Tribe - Уведомление о подключении"
     trigger:
       - platform: state
-        entity_id: binary_sensor.marvel_tribe_connected
+        entity_id: binary_sensor.marvel_tribe_wifi_connected
         to: "on"
     action:
       - service: notify.persistent_notification
@@ -153,7 +153,7 @@ automation:
   - alias: "Marvel Tribe - Уведомление об отключении"
     trigger:
       - platform: state
-        entity_id: binary_sensor.marvel_tribe_connected
+        entity_id: binary_sensor.marvel_tribe_wifi_connected
         to: "off"
         for: "00:01:00"
     action:
@@ -177,12 +177,14 @@ script:
         data:
           message: |
             Статус Marvel Tribe:
-            Подключение: {{ states('binary_sensor.marvel_tribe_connected') }}
+            Подключение: {{ states('binary_sensor.marvel_tribe_wifi_connected') }}
             WiFi: {{ states('binary_sensor.marvel_tribe_wifi_connected') }} ({{ states('sensor.marvel_tribe_wifi_ssid') }})
+            IP: {{ states('sensor.marvel_tribe_ip_address') }}
             RGB: {{ 'Включена' if is_state('binary_sensor.marvel_tribe_rgb_enabled', 'on') else 'Выключена' }}
             LCD: {{ states('number.marvel_tribe_lcd_brightness') }}%
             Автосинхронизация: {{ states('switch.marvel_tribe_auto_sync_time') }}
             Время устройства: {{ states('sensor.marvel_tribe_device_time') }}
+            Последнее обновление: {{ states('sensor.marvel_tribe_last_update') }}
           title: "Marvel Tribe - Статус"
 
 # Настройки для мобильного приложения (если используется)

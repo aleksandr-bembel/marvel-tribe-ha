@@ -28,13 +28,13 @@ async def async_setup_entry(
 
     sensors = [
         # Основные сенсоры
-        MarvelTribeConnectionStatusSensor(coordinator, entry, "connection_status"),
         MarvelTribeDeviceTimeSensor(coordinator, entry, "device_time"),
         MarvelTribeFirmwareVersionSensor(coordinator, entry, "firmware_version"),
         # WiFi (только основное)
         MarvelTribeWiFiSSIDSensor(coordinator, entry, "wifi_ssid"),
-        # RGB и LCD мониторинг
-        MarvelTribeRGBBrightnessSensor(coordinator, entry, "rgb_brightness"),
+        MarvelTribeIPAddressSensor(coordinator, entry, "ip_address"),
+        # Ambient Light и LCD мониторинг
+        MarvelTribeAmbientLightBrightnessSensor(coordinator, entry, "rgb_brightness"),
         MarvelTribeLCDBrightnessSensor(coordinator, entry, "lcd_brightness"),
         # Аудио
         MarvelTribeVolumeKeySensor(coordinator, entry, "volume_key"),
@@ -43,6 +43,8 @@ async def async_setup_entry(
         # Будильники и auto-sleep
         MarvelTribeAutoSleepPeriodSensor(coordinator, entry, "auto_sleep_period"),
         MarvelTribeActiveAlarmsSensor(coordinator, entry, "active_alarms"),
+        # Диагностика
+        MarvelTribeLastUpdateSensor(coordinator, entry, "last_update"),
     ]
 
     async_add_entities(sensors)
@@ -85,34 +87,11 @@ class MarvelTribeSensor(SensorEntity):
         )
 
 
-class MarvelTribeConnectionStatusSensor(MarvelTribeSensor):
-    """Connection status sensor."""
-
-    _attr_name = "Connection Status"
-    _attr_icon = "mdi:wifi"
-
-    @property
-    def native_value(self) -> str | None:
-        """Return the connection status."""
-        data = self.coordinator.data
-        if data:
-            return data.get("status", "unknown")
-
-    @property
-    def extra_state_attributes(self) -> dict[str, bool]:
-        """Return extra state attributes."""
-        data = self.coordinator.data or {}
-        return {
-            "connected": data.get("connected", False),
-            "ping_successful": data.get("ping_successful", False),
-        }
-
-
 class MarvelTribeDeviceTimeSensor(MarvelTribeSensor):
     """Device time sensor."""
 
     _attr_name = "Device Time"
-    _attr_icon = "mdi:clock-outline"
+    _attr_icon = "mdi:clock-digital"
 
     @property
     def native_value(self) -> str | None:
@@ -134,7 +113,7 @@ class MarvelTribeFirmwareVersionSensor(MarvelTribeSensor):
     """Firmware version sensor."""
 
     _attr_name = "Firmware Version"
-    _attr_icon = "mdi:chip"
+    _attr_icon = "mdi:memory"
 
     @property
     def native_value(self) -> str | None:
@@ -148,7 +127,7 @@ class MarvelTribeWiFiSSIDSensor(MarvelTribeSensor):
     """WiFi SSID sensor."""
 
     _attr_name = "WiFi SSID"
-    _attr_icon = "mdi:wifi"
+    _attr_icon = "mdi:wifi-settings"
 
     @property
     def native_value(self) -> str | None:
@@ -158,17 +137,31 @@ class MarvelTribeWiFiSSIDSensor(MarvelTribeSensor):
             return data.get("wifi_ssid")
 
 
-class MarvelTribeRGBBrightnessSensor(MarvelTribeSensor):
-    """RGB brightness sensor."""
+class MarvelTribeIPAddressSensor(MarvelTribeSensor):
+    """IP address sensor."""
 
-    _attr_name = "RGB Brightness"
+    _attr_name = "IP Address"
+    _attr_icon = "mdi:ip-network"
+
+    @property
+    def native_value(self) -> str | None:
+        """Return the IP address."""
+        data = self.coordinator.data
+        if data:
+            return data.get("ip_address")
+
+
+class MarvelTribeAmbientLightBrightnessSensor(MarvelTribeSensor):
+    """Ambient light brightness sensor."""
+
+    _attr_name = "Ambient Light Brightness"
     _attr_native_unit_of_measurement = PERCENTAGE
     _attr_state_class = SensorStateClass.MEASUREMENT
-    _attr_icon = "mdi:brightness-6"
+    _attr_icon = "mdi:led-variant-on"
 
     @property
     def native_value(self) -> int | None:
-        """Return the RGB brightness."""
+        """Return the ambient light brightness."""
         data = self.coordinator.data
         if data:
             return data.get("rgb_brightness")
@@ -190,7 +183,7 @@ class MarvelTribeLCDBrightnessSensor(MarvelTribeSensor):
     _attr_name = "LCD Brightness"
     _attr_native_unit_of_measurement = PERCENTAGE
     _attr_state_class = SensorStateClass.MEASUREMENT
-    _attr_icon = "mdi:brightness-7"
+    _attr_icon = "mdi:monitor-shimmer"
 
     @property
     def native_value(self) -> int | None:
@@ -215,7 +208,7 @@ class MarvelTribeVolumeKeySensor(MarvelTribeSensor):
     _attr_name = "Volume Key"
     _attr_native_unit_of_measurement = PERCENTAGE
     _attr_state_class = SensorStateClass.MEASUREMENT
-    _attr_icon = "mdi:volume-high"
+    _attr_icon = "mdi:keyboard-variant"
 
     @property
     def native_value(self) -> int | None:
@@ -239,7 +232,7 @@ class MarvelTribleLanguageSensor(MarvelTribeSensor):
     """Language sensor."""
 
     _attr_name = "Language"
-    _attr_icon = "mdi:translate"
+    _attr_icon = "mdi:web"
 
     @property
     def native_value(self) -> str | None:
@@ -253,7 +246,7 @@ class MarvelTribeAutoSleepPeriodSensor(MarvelTribeSensor):
     """Auto-sleep period sensor."""
 
     _attr_name = "Auto Sleep Period"
-    _attr_icon = "mdi:sleep"
+    _attr_icon = "mdi:timer-sleep"
 
     @property
     def native_value(self) -> str | None:
@@ -312,4 +305,27 @@ class MarvelTribeActiveAlarmsSensor(MarvelTribeSensor):
         return {
             "system_enabled": data.get("alarm_system_enabled", False),
             "active_alarms": alarms_info,
+        }
+
+
+class MarvelTribeLastUpdateSensor(MarvelTribeSensor):
+    """Last update sensor."""
+
+    _attr_name = "Last Update"
+    _attr_icon = "mdi:update"
+
+    @property
+    def native_value(self) -> str | None:
+        """Return the last update time."""
+        data = self.coordinator.data
+        if data:
+            return data.get("last_update")
+
+    @property
+    def extra_state_attributes(self) -> dict[str, any]:
+        """Return extra state attributes."""
+        data = self.coordinator.data or {}
+        return {
+            "coordinator_last_update": self.coordinator.last_update_success_time.isoformat() if self.coordinator.last_update_success_time else None,
+            "data_age_seconds": (datetime.now() - self.coordinator.last_update_success_time).total_seconds() if self.coordinator.last_update_success_time else None,
         }

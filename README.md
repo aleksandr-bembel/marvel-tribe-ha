@@ -73,38 +73,38 @@ marvel_tribe/
 После успешной настройки в Home Assistant появятся **27 сущностей** для управления часами:
 
 ### 📊 Сенсоры (10 штук)
-- `sensor.marvel_tribe_connection_status` - статус подключения
 - `sensor.marvel_tribe_device_time` - время на устройстве
 - `sensor.marvel_tribe_firmware_version` - версия прошивки
 - `sensor.marvel_tribe_wifi_ssid` - название WiFi сети
-- `sensor.marvel_tribe_rgb_brightness` - яркость RGB подсветки
+- `sensor.marvel_tribe_ip_address` - IP адрес устройства
+- `sensor.marvel_tribe_rgb_brightness` - яркость ambient light
 - `sensor.marvel_tribe_lcd_brightness` - яркость LCD дисплея
 - `sensor.marvel_tribe_volume_key` - громкость клавиш
 - `sensor.marvel_tribe_language` - язык интерфейса
 - `sensor.marvel_tribe_auto_sleep_period` - период auto-sleep
 - `sensor.marvel_tribe_active_alarms` - количество активных будильников
+- `sensor.marvel_tribe_last_update` - время последнего обновления данных
 
 ### 🔧 Переключатели (4 штуки)
 - `switch.marvel_tribe_auto_sync_time` - автоматическая синхронизация времени
-- `switch.marvel_tribe_rgb_light` - управление RGB подсветкой
+- `switch.marvel_tribe_rgb_light` - управление ambient light
 - `switch.marvel_tribe_audio` - управление аудио
 - `switch.marvel_tribe_auto_sleep` - режим auto-sleep
 
 ### 🎛️ Числовые настройки (6 штук)
-- `number.marvel_tribe_rgb_brightness` - яркость RGB (10-100%)
-- `number.marvel_tribe_rgb_speed` - скорость RGB эффектов (10-100%)
+- `number.marvel_tribe_rgb_brightness` - яркость ambient light (10-100%)
+- `number.marvel_tribe_rgb_speed` - скорость ambient light эффектов (10-100%)
 - `number.marvel_tribe_lcd_brightness` - яркость LCD (0-100%)
 - `number.marvel_tribe_volume_key` - громкость клавиш (0-100%)
 - `number.marvel_tribe_volume_startup` - громкость запуска (0-100%)
 - `number.marvel_tribe_volume_alarm` - громкость будильника (0-100%)
 
 ### 🎨 Выбор режимов (1 штука)
-- `select.marvel_tribe_rgb_effect` - RGB эффект (Rainbow/Flow/Breath/Mono)
+- `select.marvel_tribe_rgb_effect` - ambient light эффект (Rainbow/Flow/Breath/Mono)
 
-### 🔘 Двоичные сенсоры (6 штук)
-- `binary_sensor.marvel_tribe_connected` - статус подключения к часам
+### 🔘 Двоичные сенсоры (5 штук)
 - `binary_sensor.marvel_tribe_wifi_connected` - статус WiFi подключения
-- `binary_sensor.marvel_tribe_rgb_enabled` - состояние RGB подсветки
+- `binary_sensor.marvel_tribe_rgb_enabled` - состояние ambient light
 - `binary_sensor.marvel_tribe_audio_enabled` - состояние аудио
 - `binary_sensor.marvel_tribe_alarm_system` - состояние системы будильников
 - `binary_sensor.marvel_tribe_auto_sleep_active` - состояние auto-sleep

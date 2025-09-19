@@ -26,10 +26,9 @@ async def async_setup_entry(
 
     binary_sensors = [
         # Основные статусы
-        MarvelTribeConnectionBinarySensor(coordinator, entry, "connected"),
         MarvelTribeWiFiConnectedBinarySensor(coordinator, entry, "wifi_connected"),
         # Функциональные статусы
-        MarvelTribeRGBEnabledBinarySensor(coordinator, entry, "rgb_enabled"),
+        MarvelTribeAmbientLightEnabledBinarySensor(coordinator, entry, "rgb_enabled"),
         MarvelTribeAudioEnabledBinarySensor(coordinator, entry, "audio_enabled"),
         MarvelTribeAlarmSystemBinarySensor(coordinator, entry, "alarm_system"),
         MarvelTribeAutoSleepBinarySensor(coordinator, entry, "auto_sleep"),
@@ -75,21 +74,6 @@ class MarvelTribeBinarySensor(BinarySensorEntity):
         )
 
 
-class MarvelTribeConnectionBinarySensor(MarvelTribeBinarySensor):
-    """Connection status binary sensor."""
-
-    _attr_name = "Connected"
-    _attr_device_class = BinarySensorDeviceClass.CONNECTIVITY
-    _attr_icon = "mdi:wifi"
-
-    @property
-    def is_on(self) -> bool | None:
-        """Return if the device is connected."""
-        data = self.coordinator.data
-        if data:
-            return data.get("connected", False)
-
-
 class MarvelTribeWiFiConnectedBinarySensor(MarvelTribeBinarySensor):
     """WiFi connected binary sensor."""
 
@@ -114,15 +98,15 @@ class MarvelTribeWiFiConnectedBinarySensor(MarvelTribeBinarySensor):
         }
 
 
-class MarvelTribeRGBEnabledBinarySensor(MarvelTribeBinarySensor):
-    """RGB enabled binary sensor."""
+class MarvelTribeAmbientLightEnabledBinarySensor(MarvelTribeBinarySensor):
+    """Ambient light enabled binary sensor."""
 
-    _attr_name = "RGB Enabled"
+    _attr_name = "Ambient Light Enabled"
     _attr_icon = "mdi:led-on"
 
     @property
     def is_on(self) -> bool | None:
-        """Return if RGB is enabled."""
+        """Return if ambient light is enabled."""
         data = self.coordinator.data
         if data:
             return data.get("rgb_enabled", False)

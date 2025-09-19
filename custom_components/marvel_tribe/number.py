@@ -25,8 +25,8 @@ async def async_setup_entry(
     coordinator: MarvelTribeDataUpdateCoordinator = hass.data[DOMAIN][entry.entry_id]
 
     numbers = [
-        MarvelTribeRGBBrightnessNumber(coordinator, entry, "rgb_brightness"),
-        MarvelTribeRGBSpeedNumber(coordinator, entry, "rgb_speed"),
+        MarvelTribeAmbientLightBrightnessNumber(coordinator, entry, "rgb_brightness"),
+        MarvelTribeAmbientLightSpeedNumber(coordinator, entry, "rgb_speed"),
         MarvelTribeLCDBrightnessNumber(coordinator, entry, "lcd_brightness"),
         MarvelTribeVolumeKeyNumber(coordinator, entry, "volume_key"),
         MarvelTribeVolumeStartupNumber(coordinator, entry, "volume_startup"),
@@ -73,10 +73,10 @@ class MarvelTribeNumber(NumberEntity):
         )
 
 
-class MarvelTribeRGBBrightnessNumber(MarvelTribeNumber):
-    """RGB brightness number."""
+class MarvelTribeAmbientLightBrightnessNumber(MarvelTribeNumber):
+    """Ambient light brightness number."""
 
-    _attr_name = "RGB Brightness"
+    _attr_name = "Ambient Light Brightness"
     _attr_icon = "mdi:brightness-6"
     _attr_native_min_value = 10  # Минимум 10, так как 0 не поддерживается
     _attr_native_max_value = 100
@@ -93,7 +93,7 @@ class MarvelTribeRGBBrightnessNumber(MarvelTribeNumber):
     async def async_set_native_value(self, value: float) -> None:
         """Set the value."""
         try:
-            # Get current RGB config and update brightness
+            # Get current ambient light config and update brightness
             current_data = self.coordinator.data or {}
             rgb_config = {
                 "enable": current_data.get("rgb_enabled", True),
@@ -109,18 +109,18 @@ class MarvelTribeRGBBrightnessNumber(MarvelTribeNumber):
                 "set_user_property", "rgb_light", rgb_config
             )
             if success:
-                _LOGGER.info("RGB brightness set to %d", value)
+                _LOGGER.info("ambient light brightness set to %d", value)
                 await self.coordinator.async_request_refresh()
             else:
-                _LOGGER.error("Failed to set RGB brightness")
+                _LOGGER.error("Failed to set ambient light brightness")
         except Exception as err:
-            _LOGGER.error("Error setting RGB brightness: %s", err)
+            _LOGGER.error("Error setting ambient light brightness: %s", err)
 
 
-class MarvelTribeRGBSpeedNumber(MarvelTribeNumber):
-    """RGB speed number."""
+class MarvelTribeAmbientLightSpeedNumber(MarvelTribeNumber):
+    """Ambient light speed number."""
 
-    _attr_name = "RGB Speed"
+    _attr_name = "Ambient Light Speed"
     _attr_icon = "mdi:speedometer"
     _attr_native_min_value = 10  # Минимум 10 для стабильности
     _attr_native_max_value = 100
@@ -141,12 +141,12 @@ class MarvelTribeRGBSpeedNumber(MarvelTribeNumber):
                 "set_user_property", "rgb_light", {"speed": int(value)}
             )
             if success:
-                _LOGGER.info("RGB speed set to %d", value)
+                _LOGGER.info("ambient light speed set to %d", value)
                 await self.coordinator.async_request_refresh()
             else:
-                _LOGGER.error("Failed to set RGB speed")
+                _LOGGER.error("Failed to set ambient light speed")
         except Exception as err:
-            _LOGGER.error("Error setting RGB speed: %s", err)
+            _LOGGER.error("Error setting ambient light speed: %s", err)
 
 
 class MarvelTribeLCDBrightnessNumber(MarvelTribeNumber):

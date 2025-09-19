@@ -27,7 +27,7 @@ async def async_setup_entry(
     switches = [
         MarvelTribeAutoSyncSwitch(coordinator, entry, "auto_sync_time"),
         # Новые переключатели на основе реальных данных
-        MarvelTribeRGBLightSwitch(coordinator, entry, "rgb_light"),
+        MarvelTribeAmbientLightSwitch(coordinator, entry, "rgb_light"),
         MarvelTribeAudioSwitch(coordinator, entry, "audio"),
         MarvelTribeAutoSleepSwitch(coordinator, entry, "auto_sleep"),
     ]
@@ -92,24 +92,24 @@ class MarvelTribeAutoSyncSwitch(MarvelTribeSwitch):
         _LOGGER.info("Auto sync disabled")
 
 
-class MarvelTribeRGBLightSwitch(MarvelTribeSwitch):
-    """RGB light switch."""
+class MarvelTribeAmbientLightSwitch(MarvelTribeSwitch):
+    """Ambient light switch."""
 
-    _attr_name = "RGB Light"
+    _attr_name = "Ambient Light"
     _attr_icon = "mdi:led-on"
 
     @property
     def is_on(self) -> bool:
-        """Return if RGB light is on."""
+        """Return if ambient light light is on."""
         data = self.coordinator.data
         if data:
             return data.get("rgb_enabled", False)
         return False
 
     async def async_turn_on(self, **kwargs) -> None:
-        """Turn on RGB light."""
+        """Turn on ambient light light."""
         try:
-            # Get current RGB config and update enable field
+            # Get current ambient light config and update enable field
             current_data = self.coordinator.data or {}
             rgb_config = {
                 "enable": True,
@@ -125,18 +125,18 @@ class MarvelTribeRGBLightSwitch(MarvelTribeSwitch):
                 "set_user_property", "rgb_light", rgb_config
             )
             if success:
-                _LOGGER.info("RGB light turned on")
+                _LOGGER.info("ambient light light turned on")
                 # Request updated data
                 await self.coordinator.async_request_refresh()
             else:
-                _LOGGER.error("Failed to turn on RGB light")
+                _LOGGER.error("Failed to turn on ambient light light")
         except Exception as err:
-            _LOGGER.error("Error turning on RGB light: %s", err)
+            _LOGGER.error("Error turning on ambient light light: %s", err)
 
     async def async_turn_off(self, **kwargs) -> None:
-        """Turn off RGB light."""
+        """Turn off ambient light light."""
         try:
-            # Get current RGB config and update enable field
+            # Get current ambient light config and update enable field
             current_data = self.coordinator.data or {}
             rgb_config = {
                 "enable": False,
@@ -152,13 +152,13 @@ class MarvelTribeRGBLightSwitch(MarvelTribeSwitch):
                 "set_user_property", "rgb_light", rgb_config
             )
             if success:
-                _LOGGER.info("RGB light turned off")
+                _LOGGER.info("ambient light light turned off")
                 # Request updated data
                 await self.coordinator.async_request_refresh()
             else:
-                _LOGGER.error("Failed to turn off RGB light")
+                _LOGGER.error("Failed to turn off ambient light light")
         except Exception as err:
-            _LOGGER.error("Error turning off RGB light: %s", err)
+            _LOGGER.error("Error turning off ambient light light: %s", err)
 
 
 class MarvelTribeAudioSwitch(MarvelTribeSwitch):

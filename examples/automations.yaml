@@ -43,7 +43,7 @@
   description: "Обновляет данные при переподключении часов"
   trigger:
     - platform: state
-      entity_id: binary_sensor.marvel_tribe_connected
+      entity_id: binary_sensor.marvel_tribe_wifi_connected
       from: "off"
       to: "on"
   action:
@@ -60,7 +60,7 @@
   description: "Уведомляет о потере связи с часами"
   trigger:
     - platform: state
-      entity_id: binary_sensor.marvel_tribe_connected
+      entity_id: binary_sensor.marvel_tribe_wifi_connected
       to: "off"
       for: "00:05:00"  # Через 5 минут после отключения
   action:
@@ -83,7 +83,7 @@
       minutes: "/30"  # Каждые 30 минут
   condition:
     - condition: state
-      entity_id: binary_sensor.marvel_tribe_connected
+      entity_id: binary_sensor.marvel_tribe_wifi_connected
       state: "on"
   action:
     - service: notify.persistent_notification
@@ -101,7 +101,7 @@
       at: "02:00:00"
   condition:
     - condition: state
-      entity_id: binary_sensor.marvel_tribe_connected
+      entity_id: binary_sensor.marvel_tribe_wifi_connected
       state: "on"
   action:
     - service: switch.turn_on
@@ -176,7 +176,7 @@
       offset: "-00:30:00"
   condition:
     - condition: state
-      entity_id: binary_sensor.marvel_tribe_connected
+      entity_id: binary_sensor.marvel_tribe_wifi_connected
       state: "on"
   action:
     - service: switch.turn_on
@@ -202,7 +202,7 @@
       at: "22:00:00"  # Вечером
   condition:
     - condition: state
-      entity_id: binary_sensor.marvel_tribe_connected
+      entity_id: binary_sensor.marvel_tribe_wifi_connected
       state: "on"
   action:
     - service: number.set_value
@@ -225,7 +225,7 @@
       at: "21:30:00"
   condition:
     - condition: state
-      entity_id: binary_sensor.marvel_tribe_connected
+      entity_id: binary_sensor.marvel_tribe_wifi_connected
       state: "on"
   action:
     - service: switch.turn_on

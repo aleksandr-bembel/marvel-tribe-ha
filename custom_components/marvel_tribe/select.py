@@ -25,7 +25,7 @@ async def async_setup_entry(
     coordinator: MarvelTribeDataUpdateCoordinator = hass.data[DOMAIN][entry.entry_id]
 
     selects = [
-        MarvelTribeRGBEffectSelect(coordinator, entry, "rgb_effect"),
+        MarvelTribeAmbientLightEffectSelect(coordinator, entry, "rgb_effect"),
     ]
 
     async_add_entities(selects)
@@ -68,10 +68,10 @@ class MarvelTribeSelect(SelectEntity):
         )
 
 
-class MarvelTribeRGBEffectSelect(MarvelTribeSelect):
-    """RGB effect select."""
+class MarvelTribeAmbientLightEffectSelect(MarvelTribeSelect):
+    """Ambient light effect select."""
 
-    _attr_name = "RGB Effect"
+    _attr_name = "Ambient Light Effect"
     _attr_icon = "mdi:palette"
     _attr_options = ["Rainbow", "Flow", "Breath", "Mono"]
 
@@ -90,7 +90,7 @@ class MarvelTribeRGBEffectSelect(MarvelTribeSelect):
             effect_map = {"Rainbow": 0, "Flow": 1, "Breath": 2, "Mono": 3}
             effect_value = effect_map.get(option, 0)
             
-            # Get current RGB config and update effect
+            # Get current ambient light config and update effect
             current_data = self.coordinator.data or {}
             rgb_config = {
                 "enable": current_data.get("rgb_enabled", True),
@@ -106,9 +106,9 @@ class MarvelTribeRGBEffectSelect(MarvelTribeSelect):
                 "set_user_property", "rgb_light", rgb_config
             )
             if success:
-                _LOGGER.info("RGB effect set to %s", option)
+                _LOGGER.info("ambient light effect set to %s", option)
                 await self.coordinator.async_request_refresh()
             else:
-                _LOGGER.error("Failed to set RGB effect")
+                _LOGGER.error("Failed to set ambient light effect")
         except Exception as err:
-            _LOGGER.error("Error setting RGB effect: %s", err)
+            _LOGGER.error("Error setting ambient light effect: %s", err)

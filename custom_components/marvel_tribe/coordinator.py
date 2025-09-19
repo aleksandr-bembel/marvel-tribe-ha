@@ -174,7 +174,7 @@ class MarvelTribeDataUpdateCoordinator(DataUpdateCoordinator):
                     "timezone_info": time_info.get("timezone_city_info", ""),
                 })
             
-            # RGB info (property 7)
+            # Ambient light info (property 7)
             if "7" in message:
                 rgb_info = message["7"]
                 current_data.update({

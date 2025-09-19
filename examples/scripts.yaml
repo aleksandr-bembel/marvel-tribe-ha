@@ -33,7 +33,7 @@ device_diagnostics:
     
     # Проверяем подключение
     - condition: state
-      entity_id: binary_sensor.marvel_tribe_connected
+      entity_id: binary_sensor.marvel_tribe_wifi_connected
       state: "on"
     
     # Проверяем основные статусы
@@ -45,7 +45,7 @@ device_diagnostics:
         message: |
           Диагностика Marvel Tribe:
           
-          Подключение: {{ states('binary_sensor.marvel_tribe_connected') }}
+          Подключение: {{ states('binary_sensor.marvel_tribe_wifi_connected') }}
           WiFi: {{ states('binary_sensor.marvel_tribe_wifi_connected') }} ({{ states('sensor.marvel_tribe_wifi_ssid') }})
           RGB: {{ 'Включена' if is_state('binary_sensor.marvel_tribe_rgb_enabled', 'on') else 'Выключена' }}
           Аудио: {{ 'Включено' if is_state('binary_sensor.marvel_tribe_audio_enabled', 'on') else 'Выключено' }}
@@ -104,7 +104,7 @@ system_status_check:
         message: |
           Системный статус Marvel Tribe:
           
-          Подключение: {{ 'Активно' if is_state('binary_sensor.marvel_tribe_connected', 'on') else 'Отсутствует' }}
+          Подключение: {{ 'Активно' if is_state('binary_sensor.marvel_tribe_wifi_connected', 'on') else 'Отсутствует' }}
           WiFi: {{ states('sensor.marvel_tribe_wifi_ssid') }}
           RGB: {{ states('select.marvel_tribe_rgb_effect') }} ({{ states('number.marvel_tribe_rgb_brightness') }}%)
           LCD: {{ states('number.marvel_tribe_lcd_brightness') }}%
