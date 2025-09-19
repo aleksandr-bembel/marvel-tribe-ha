@@ -178,9 +178,9 @@ script:
           message: |
             Статус Marvel Tribe:
             Подключение: {{ states('binary_sensor.marvel_tribe_connected') }}
-            Статус соединения: {{ states('sensor.marvel_tribe_connection_status') }}
-            Батарея: {{ states('sensor.marvel_tribe_battery_level') }}%
-            Зарядка: {{ states('binary_sensor.marvel_tribe_charging') }}
+            WiFi: {{ states('binary_sensor.marvel_tribe_wifi_connected') }} ({{ states('sensor.marvel_tribe_wifi_ssid') }})
+            RGB: {{ 'Включена' if is_state('binary_sensor.marvel_tribe_rgb_enabled', 'on') else 'Выключена' }}
+            LCD: {{ states('number.marvel_tribe_lcd_brightness') }}%
             Автосинхронизация: {{ states('switch.marvel_tribe_auto_sync_time') }}
             Время устройства: {{ states('sensor.marvel_tribe_device_time') }}
           title: "Marvel Tribe - Статус"
@@ -236,13 +236,13 @@ lovelace:
 
 # homeassistant:
 #   customize:
-#     sensor.marvel_tribe_battery_level:
-#       friendly_name: "Уровень батареи"
-#       icon: mdi:battery
-#     
 #     sensor.marvel_tribe_connection_status:
 #       friendly_name: "Статус подключения"
 #       icon: mdi:wifi
+#     
+#     switch.marvel_tribe_rgb_light:
+#       friendly_name: "RGB подсветка"
+#       icon: mdi:led-on
 #     
 #     switch.marvel_tribe_auto_sync_time:
 #       friendly_name: "Автосинхронизация времени"

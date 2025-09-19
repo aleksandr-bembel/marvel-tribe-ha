@@ -48,8 +48,10 @@
       to: "on"
   action:
     - delay: "00:00:10"  # Ждем стабилизации соединения
-    - service: button.press
-      entity_id: button.marvel_tribe_refresh_data
+    - service: notify.persistent_notification
+      data:
+        message: "Часы Marvel Tribe переподключились"
+        title: "Marvel Tribe"
   mode: single
 
 # Уведомление о потере связи
@@ -84,8 +86,10 @@
       entity_id: binary_sensor.marvel_tribe_connected
       state: "on"
   action:
-    - service: button.press
-      entity_id: button.marvel_tribe_ping_device
+    - service: notify.persistent_notification
+      data:
+        message: "Проверка статуса часов Marvel Tribe"
+        title: "Marvel Tribe"
   mode: single
 
 # Ежедневная синхронизация времени
@@ -100,12 +104,11 @@
       entity_id: binary_sensor.marvel_tribe_connected
       state: "on"
   action:
-    - service: button.press
-      entity_id: button.marvel_tribe_sync_time
-    - delay: "00:00:10"
+    - service: switch.turn_on
+      entity_id: switch.marvel_tribe_auto_sync_time
     - service: notify.persistent_notification
       data:
-        message: "Ежедневная синхронизация времени Marvel Tribe завершена"
+        message: "Автосинхронизация времени Marvel Tribe включена"
         title: "Marvel Tribe - Синхронизация"
   mode: single
 
