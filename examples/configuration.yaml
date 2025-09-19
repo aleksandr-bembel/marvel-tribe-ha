@@ -32,7 +32,6 @@ group:
   marvel_tribe_switches:
     name: "Marvel Tribe - Переключатели"
     entities:
-      - switch.marvel_tribe_auto_sync_time
       - switch.marvel_tribe_rgb_light
       - switch.marvel_tribe_audio
       - switch.marvel_tribe_auto_sleep
@@ -182,7 +181,6 @@ script:
             IP: {{ states('sensor.marvel_tribe_ip_address') }}
             RGB: {{ 'Включена' if is_state('binary_sensor.marvel_tribe_rgb_enabled', 'on') else 'Выключена' }}
             LCD: {{ states('number.marvel_tribe_lcd_brightness') }}%
-            Автосинхронизация: {{ states('switch.marvel_tribe_auto_sync_time') }}
             Время устройства: {{ states('sensor.marvel_tribe_device_time') }}
             Последнее обновление: {{ states('sensor.marvel_tribe_last_update') }}
           title: "Marvel Tribe - Статус"

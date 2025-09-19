@@ -25,8 +25,7 @@ async def async_setup_entry(
     coordinator: MarvelTribeDataUpdateCoordinator = hass.data[DOMAIN][entry.entry_id]
 
     switches = [
-        MarvelTribeAutoSyncSwitch(coordinator, entry, "auto_sync_time"),
-        # Новые переключатели на основе реальных данных
+        # Переключатели на основе реальных данных
         MarvelTribeAmbientLightSwitch(coordinator, entry, "rgb_light"),
         MarvelTribeAudioSwitch(coordinator, entry, "audio"),
         MarvelTribeAutoSleepSwitch(coordinator, entry, "auto_sleep"),
@@ -65,33 +64,6 @@ class MarvelTribeSwitch(SwitchEntity):
         return self.coordinator.last_update_success
 
 
-class MarvelTribeAutoSyncSwitch(MarvelTribeSwitch):
-    """Auto sync time switch."""
-
-    _attr_name = "Auto Sync Time"
-    _attr_icon = "mdi:clock-auto"
-
-    def __init__(self, coordinator: MarvelTribeDataUpdateCoordinator, entry: ConfigEntry, switch_type: str) -> None:
-        """Initialize the switch."""
-        super().__init__(coordinator, entry, switch_type)
-        self._attr_is_on = False
-
-    @property
-    def is_on(self) -> bool:
-        """Return if auto sync is enabled."""
-        return self._attr_is_on
-
-    async def async_turn_on(self, **kwargs) -> None:
-        """Turn on auto sync."""
-        self._attr_is_on = True
-        _LOGGER.info("Auto sync enabled")
-
-    async def async_turn_off(self, **kwargs) -> None:
-        """Turn off auto sync."""
-        self._attr_is_on = False
-        _LOGGER.info("Auto sync disabled")
-
-
 class MarvelTribeAmbientLightSwitch(MarvelTribeSwitch):
     """Ambient light switch."""
 
@@ -126,8 +98,13 @@ class MarvelTribeAmbientLightSwitch(MarvelTribeSwitch):
             )
             if success:
                 _LOGGER.info("ambient light light turned on")
-                # Request updated data
+                # Update local state immediately
+                if self.coordinator.data:
+                    self.coordinator.data["rgb_enabled"] = True
+                # Request updated data from device
                 await self.coordinator.async_request_refresh()
+                # Update entity state
+                self.async_write_ha_state()
             else:
                 _LOGGER.error("Failed to turn on ambient light light")
         except Exception as err:
@@ -153,8 +130,13 @@ class MarvelTribeAmbientLightSwitch(MarvelTribeSwitch):
             )
             if success:
                 _LOGGER.info("ambient light light turned off")
-                # Request updated data
+                # Update local state immediately
+                if self.coordinator.data:
+                    self.coordinator.data["rgb_enabled"] = False
+                # Request updated data from device
                 await self.coordinator.async_request_refresh()
+                # Update entity state
+                self.async_write_ha_state()
             else:
                 _LOGGER.error("Failed to turn off ambient light light")
         except Exception as err:

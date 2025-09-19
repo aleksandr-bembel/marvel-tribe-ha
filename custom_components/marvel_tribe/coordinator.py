@@ -121,6 +121,7 @@ class MarvelTribeDataUpdateCoordinator(DataUpdateCoordinator):
             "battery_level": data.get("level", 0),
             "battery_charging": data.get("charging", False),
             "battery_voltage": data.get("voltage", 0),
+            "last_update": datetime.now().isoformat(),
         })
         self.data = current_data
         _LOGGER.debug("Updated battery: %s", current_data)
@@ -132,6 +133,7 @@ class MarvelTribeDataUpdateCoordinator(DataUpdateCoordinator):
         current_data.update({
             "device_time": data.get("time", ""),
             "timezone": data.get("timezone", ""),
+            "last_update": datetime.now().isoformat(),
         })
         self.data = current_data
         _LOGGER.debug("Updated time: %s", current_data)
@@ -142,6 +144,7 @@ class MarvelTribeDataUpdateCoordinator(DataUpdateCoordinator):
         current_data.update({
             "last_ping": datetime.now().isoformat(),
             "ping_successful": True,
+            "last_update": datetime.now().isoformat(),
         })
         self.data = current_data
         _LOGGER.debug("Received pong: %s", current_data)
