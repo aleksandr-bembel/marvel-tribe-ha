@@ -1,7 +1,7 @@
 {
   "domain": "marvel_tribe",
   "name": "Marvel Tribe",
-  "version": "1.3.4",
+  "version": "1.4.0",
   "codeowners": ["@aleksandr-bembel"],
   "config_flow": true,
   "dependencies": [],
