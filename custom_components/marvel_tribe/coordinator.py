@@ -28,7 +28,6 @@ class MarvelTribeDataUpdateCoordinator(DataUpdateCoordinator):
         
         # Register message handlers
         self.client.register_message_handler("status", self._handle_status)
-        self.client.register_message_handler("battery", self._handle_battery)
         self.client.register_message_handler("time", self._handle_time)
         self.client.register_message_handler("pong", self._handle_pong)
         self.client.register_message_handler("marvel_tribe_data", self._handle_marvel_tribe_response)
@@ -69,7 +68,6 @@ class MarvelTribeDataUpdateCoordinator(DataUpdateCoordinator):
             
             # Request status updates
             await self.client.get_status()
-            await self.client.get_battery()
             await self.client.get_time()
             
             # Return current data (will be updated by message handlers)
@@ -78,12 +76,8 @@ class MarvelTribeDataUpdateCoordinator(DataUpdateCoordinator):
                 _LOGGER.info("First connection to Marvel Tribe - initializing with default values")
                 # Initialize with default values
                 current_data = {
-                    "battery_level": 75,  # Mock battery level since device doesn't report it
-                    "battery_charging": False,  # Mock charging status
-                    "battery_voltage": 3.7,  # Mock voltage for typical Li-ion battery
                     "connected": self.client.connected,
-                    "status": "unknown",
-                    "device_time": "",
+                    "status": "unknown", 
                     "last_update": datetime.now().isoformat(),
                 }
             
@@ -115,19 +109,6 @@ class MarvelTribeDataUpdateCoordinator(DataUpdateCoordinator):
         })
         self.data = current_data
         _LOGGER.debug("Updated status: %s", current_data)
-
-    async def _handle_battery(self, message: dict):
-        """Handle battery message."""
-        data = message.get("data", {})
-        current_data = self.data or {}
-        current_data.update({
-            "battery_level": data.get("level", 0),
-            "battery_charging": data.get("charging", False),
-            "battery_voltage": data.get("voltage", 0),
-            "last_update": datetime.now().isoformat(),
-        })
-        self.data = current_data
-        _LOGGER.debug("Updated battery: %s", current_data)
 
     async def _handle_time(self, message: dict):
         """Handle time message."""
