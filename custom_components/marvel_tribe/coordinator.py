@@ -191,12 +191,13 @@ class MarvelTribeDataUpdateCoordinator(DataUpdateCoordinator):
                 else:
                     _LOGGER.debug("Skipping rgb_enabled update - key is protected")
                 
-                # Other RGB properties can be updated normally
-                rgb_updates.update({
-                    "rgb_brightness": rgb_info.get("brightness", 0),
-                    "rgb_speed": rgb_info.get("speed", 0),
-                    "rgb_effect": rgb_info.get("effect", 0),
-                })
+                # Other RGB properties - check protection for each
+                if not self.is_key_protected("rgb_brightness"):
+                    rgb_updates["rgb_brightness"] = rgb_info.get("brightness", 0)
+                if not self.is_key_protected("rgb_speed"):
+                    rgb_updates["rgb_speed"] = rgb_info.get("speed", 0)
+                if not self.is_key_protected("rgb_effect"):
+                    rgb_updates["rgb_effect"] = rgb_info.get("effect", 0)
                 
                 current_data.update(rgb_updates)
             
@@ -220,20 +221,29 @@ class MarvelTribeDataUpdateCoordinator(DataUpdateCoordinator):
                 else:
                     _LOGGER.debug("Skipping audio_enabled update - key is protected")
                 
-                # Other audio properties can be updated normally
-                audio_updates.update({
-                    "volume_key": audio_info.get("volume_key", 0),
-                    "volume_startup": audio_info.get("volume_startup", 0),
-                    "volume_alarm": audio_info.get("volume_alarm", 0),
-                })
+                # Other audio properties - check protection for each
+                if not self.is_key_protected("volume_key"):
+                    audio_updates["volume_key"] = audio_info.get("volume_key", 0)
+                if not self.is_key_protected("volume_startup"):
+                    audio_updates["volume_startup"] = audio_info.get("volume_startup", 0)
+                if not self.is_key_protected("volume_alarm"):
+                    audio_updates["volume_alarm"] = audio_info.get("volume_alarm", 0)
                 
                 current_data.update(audio_updates)
             
             # LCD info (property 12)
             if "12" in message:
                 lcd_info = message["12"]
-                current_data.update({
-                    "lcd_brightness": lcd_info.get("lcd_brightness", 0),
+                lcd_updates = {}
+                
+                # Check protection for LCD brightness
+                if not self.is_key_protected("lcd_brightness"):
+                    lcd_updates["lcd_brightness"] = lcd_info.get("lcd_brightness", 0)
+                else:
+                    _LOGGER.debug("Skipping lcd_brightness update - key is protected")
+                
+                # Other LCD properties can be updated normally
+                lcd_updates.update({
                     "language": lcd_info.get("language", "en"),
                     "display_mode": lcd_info.get("display_mode", 0),
                     "style": lcd_info.get("style", 0),
@@ -243,6 +253,8 @@ class MarvelTribeDataUpdateCoordinator(DataUpdateCoordinator):
                     "date_mode_date_duration": lcd_info.get("date_mode_date_duration", 60),
                     "date_mode_time_duration": lcd_info.get("date_mode_time_duration", 60),
                 })
+                
+                current_data.update(lcd_updates)
             
             # Alarm info (property 4)
             if "4" in message:

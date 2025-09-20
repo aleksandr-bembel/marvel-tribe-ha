@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import asyncio
 import logging
 
 from homeassistant.components.number import NumberEntity
@@ -110,7 +111,18 @@ class MarvelTribeAmbientLightBrightnessNumber(MarvelTribeNumber):
             )
             if success:
                 _LOGGER.info("ambient light brightness set to %d", value)
+                # Update local state immediately and protect it
+                if self.coordinator.data:
+                    self.coordinator.data["rgb_brightness"] = int(value)
+                    self.coordinator.protect_state_key("rgb_brightness", 3.0)
+                # Update entity state immediately
+                self.async_write_ha_state()
+                # Wait a bit for device to process the command
+                await asyncio.sleep(0.5)
+                # Request updated data from device
                 await self.coordinator.async_request_refresh()
+                # Force update all listeners
+                self.coordinator.async_update_listeners()
             else:
                 _LOGGER.error("Failed to set ambient light brightness")
         except Exception as err:
@@ -137,12 +149,35 @@ class MarvelTribeAmbientLightSpeedNumber(MarvelTribeNumber):
     async def async_set_native_value(self, value: float) -> None:
         """Set the value."""
         try:
+            # Get current ambient light config and update speed
+            current_data = self.coordinator.data or {}
+            rgb_config = {
+                "enable": current_data.get("rgb_enabled", True),
+                "brightness": current_data.get("rgb_brightness", 20),
+                "speed": int(value),
+                "effect": current_data.get("rgb_effect", 1),
+                "easy_effect": ["#ff0000"] * 6,
+                "breath_effect": ["#ff0000"] * 6,
+                "unify_effect": "#000000"
+            }
+            
             success = await self.coordinator.client.send_property_command(
-                "set_user_property", "rgb_light", {"speed": int(value)}
+                "set_user_property", "rgb_light", rgb_config
             )
             if success:
                 _LOGGER.info("ambient light speed set to %d", value)
+                # Update local state immediately and protect it
+                if self.coordinator.data:
+                    self.coordinator.data["rgb_speed"] = int(value)
+                    self.coordinator.protect_state_key("rgb_speed", 3.0)
+                # Update entity state immediately
+                self.async_write_ha_state()
+                # Wait a bit for device to process the command
+                await asyncio.sleep(0.5)
+                # Request updated data from device
                 await self.coordinator.async_request_refresh()
+                # Force update all listeners
+                self.coordinator.async_update_listeners()
             else:
                 _LOGGER.error("Failed to set ambient light speed")
         except Exception as err:
@@ -196,7 +231,18 @@ class MarvelTribeLCDBrightnessNumber(MarvelTribeNumber):
             )
             if success:
                 _LOGGER.info("LCD brightness set to %d", value)
+                # Update local state immediately and protect it
+                if self.coordinator.data:
+                    self.coordinator.data["lcd_brightness"] = int(value)
+                    self.coordinator.protect_state_key("lcd_brightness", 3.0)
+                # Update entity state immediately
+                self.async_write_ha_state()
+                # Wait a bit for device to process the command
+                await asyncio.sleep(0.5)
+                # Request updated data from device
                 await self.coordinator.async_request_refresh()
+                # Force update all listeners
+                self.coordinator.async_update_listeners()
             else:
                 _LOGGER.error("Failed to set LCD brightness")
         except Exception as err:
@@ -223,12 +269,32 @@ class MarvelTribeVolumeKeyNumber(MarvelTribeNumber):
     async def async_set_native_value(self, value: float) -> None:
         """Set the value."""
         try:
+            # Get current audio config and update volume_key
+            current_data = self.coordinator.data or {}
+            audio_config = {
+                "enable": current_data.get("audio_enabled", True),
+                "volume_key": int(value),
+                "volume_startup": current_data.get("volume_startup", 50),
+                "volume_alarm": current_data.get("volume_alarm", 50),
+            }
+            
             success = await self.coordinator.client.send_property_command(
-                "set_user_property", "audio", {"volume_key": int(value)}
+                "set_user_property", "audio", audio_config
             )
             if success:
                 _LOGGER.info("Volume key set to %d", value)
+                # Update local state immediately and protect it
+                if self.coordinator.data:
+                    self.coordinator.data["volume_key"] = int(value)
+                    self.coordinator.protect_state_key("volume_key", 3.0)
+                # Update entity state immediately
+                self.async_write_ha_state()
+                # Wait a bit for device to process the command
+                await asyncio.sleep(0.5)
+                # Request updated data from device
                 await self.coordinator.async_request_refresh()
+                # Force update all listeners
+                self.coordinator.async_update_listeners()
             else:
                 _LOGGER.error("Failed to set volume key")
         except Exception as err:
@@ -255,12 +321,32 @@ class MarvelTribeVolumeStartupNumber(MarvelTribeNumber):
     async def async_set_native_value(self, value: float) -> None:
         """Set the value."""
         try:
+            # Get current audio config and update volume_startup
+            current_data = self.coordinator.data or {}
+            audio_config = {
+                "enable": current_data.get("audio_enabled", True),
+                "volume_key": current_data.get("volume_key", 50),
+                "volume_startup": int(value),
+                "volume_alarm": current_data.get("volume_alarm", 50),
+            }
+            
             success = await self.coordinator.client.send_property_command(
-                "set_user_property", "audio", {"volume_startup": int(value)}
+                "set_user_property", "audio", audio_config
             )
             if success:
                 _LOGGER.info("Volume startup set to %d", value)
+                # Update local state immediately and protect it
+                if self.coordinator.data:
+                    self.coordinator.data["volume_startup"] = int(value)
+                    self.coordinator.protect_state_key("volume_startup", 3.0)
+                # Update entity state immediately
+                self.async_write_ha_state()
+                # Wait a bit for device to process the command
+                await asyncio.sleep(0.5)
+                # Request updated data from device
                 await self.coordinator.async_request_refresh()
+                # Force update all listeners
+                self.coordinator.async_update_listeners()
             else:
                 _LOGGER.error("Failed to set volume startup")
         except Exception as err:
@@ -287,12 +373,32 @@ class MarvelTribeVolumeAlarmNumber(MarvelTribeNumber):
     async def async_set_native_value(self, value: float) -> None:
         """Set the value."""
         try:
+            # Get current audio config and update volume_alarm
+            current_data = self.coordinator.data or {}
+            audio_config = {
+                "enable": current_data.get("audio_enabled", True),
+                "volume_key": current_data.get("volume_key", 50),
+                "volume_startup": current_data.get("volume_startup", 50),
+                "volume_alarm": int(value),
+            }
+            
             success = await self.coordinator.client.send_property_command(
-                "set_user_property", "audio", {"volume_alarm": int(value)}
+                "set_user_property", "audio", audio_config
             )
             if success:
                 _LOGGER.info("Volume alarm set to %d", value)
+                # Update local state immediately and protect it
+                if self.coordinator.data:
+                    self.coordinator.data["volume_alarm"] = int(value)
+                    self.coordinator.protect_state_key("volume_alarm", 3.0)
+                # Update entity state immediately
+                self.async_write_ha_state()
+                # Wait a bit for device to process the command
+                await asyncio.sleep(0.5)
+                # Request updated data from device
                 await self.coordinator.async_request_refresh()
+                # Force update all listeners
+                self.coordinator.async_update_listeners()
             else:
                 _LOGGER.error("Failed to set volume alarm")
         except Exception as err:
