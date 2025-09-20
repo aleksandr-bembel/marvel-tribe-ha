@@ -267,11 +267,21 @@ class MarvelTribeDataUpdateCoordinator(DataUpdateCoordinator):
             # Auto-sleep info (property 6)
             if "6" in message:
                 autosleep_info = message["6"]
-                current_data.update({
-                    "auto_sleep_enabled": autosleep_info.get("enable", False),
+                autosleep_updates = {}
+                
+                # Only update auto_sleep_enabled if it's not protected
+                if not self.is_key_protected("auto_sleep_enabled"):
+                    autosleep_updates["auto_sleep_enabled"] = autosleep_info.get("enable", False)
+                else:
+                    _LOGGER.debug("Skipping auto_sleep_enabled update - key is protected")
+                
+                # Other auto-sleep properties can be updated normally
+                autosleep_updates.update({
                     "auto_sleep_start": autosleep_info.get("start", "00:00"),
                     "auto_sleep_end": autosleep_info.get("end", "00:00"),
                 })
+                
+                current_data.update(autosleep_updates)
         
         elif command == 8:  # characteristic response
             char_data = message.get("data", {})

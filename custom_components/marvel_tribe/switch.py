@@ -277,7 +277,18 @@ class MarvelTribeAutoSleepSwitch(MarvelTribeSwitch):
             )
             if success:
                 _LOGGER.info("Auto sleep turned on")
+                # Update local state immediately and protect it
+                if self.coordinator.data:
+                    self.coordinator.data["auto_sleep_enabled"] = True
+                    self.coordinator.protect_state_key("auto_sleep_enabled", 3.0)
+                # Update entity state immediately
+                self.async_write_ha_state()
+                # Wait a bit for device to process the command
+                await asyncio.sleep(0.5)
+                # Request updated data from device
                 await self.coordinator.async_request_refresh()
+                # Force update all listeners
+                self.coordinator.async_update_listeners()
             else:
                 _LOGGER.error("Failed to turn on auto sleep")
         except Exception as err:
@@ -299,7 +310,18 @@ class MarvelTribeAutoSleepSwitch(MarvelTribeSwitch):
             )
             if success:
                 _LOGGER.info("Auto sleep turned off")
+                # Update local state immediately and protect it
+                if self.coordinator.data:
+                    self.coordinator.data["auto_sleep_enabled"] = False
+                    self.coordinator.protect_state_key("auto_sleep_enabled", 3.0)
+                # Update entity state immediately
+                self.async_write_ha_state()
+                # Wait a bit for device to process the command
+                await asyncio.sleep(0.5)
+                # Request updated data from device
                 await self.coordinator.async_request_refresh()
+                # Force update all listeners
+                self.coordinator.async_update_listeners()
             else:
                 _LOGGER.error("Failed to turn off auto sleep")
         except Exception as err:
