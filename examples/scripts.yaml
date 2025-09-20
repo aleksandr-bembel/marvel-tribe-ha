@@ -1,10 +1,10 @@
 # Примеры скриптов для Marvel Tribe
 # Скопируйте нужные скрипты в ваш файл scripts.yaml
 
-# Быстрая настройка RGB
+# Быстрая настройка Ambient Light
 setup_rgb_evening:
-  alias: "Marvel Tribe - Вечерняя RGB"
-  description: "Настраивает RGB для вечернего времени"
+  alias: "Marvel Tribe - Вечерняя подсветка"
+  description: "Настраивает Ambient Light для вечернего времени"
   sequence:
     - service: switch.turn_on
       entity_id: switch.marvel_tribe_rgb_light
@@ -54,27 +54,27 @@ device_diagnostics:
           Прошивка: {{ states('sensor.marvel_tribe_firmware_version') }}
         title: "Marvel Tribe - Диагностика"
 
-# Управление автосинхронизацией времени
-enable_auto_sync:
-  alias: "Marvel Tribe - Включить автосинхронизацию"
-  description: "Включает автоматическую синхронизацию времени"
+# Управление аудио системой
+enable_audio:
+  alias: "Marvel Tribe - Включить аудио"
+  description: "Включает аудио систему часов"
   sequence:
     - service: switch.turn_on
-      entity_id: switch.marvel_tribe_auto_sync_time
+      entity_id: switch.marvel_tribe_audio
     - service: notify.persistent_notification
       data:
-        message: "Автосинхронизация времени включена ⏰"
+        message: "Аудио система часов включена 🔊"
         title: "Marvel Tribe"
 
-disable_auto_sync:
-  alias: "Marvel Tribe - Выключить автосинхронизацию"
-  description: "Выключает автоматическую синхронизацию времени"
+disable_audio:
+  alias: "Marvel Tribe - Выключить аудио"
+  description: "Выключает аудио систему часов"
   sequence:
     - service: switch.turn_off
-      entity_id: switch.marvel_tribe_auto_sync_time
+      entity_id: switch.marvel_tribe_audio
     - service: notify.persistent_notification
       data:
-        message: "Автосинхронизация времени выключена"
+        message: "Аудио система часов выключена 🔇"
         title: "Marvel Tribe"
 
 setup_night_mode:
@@ -118,7 +118,7 @@ setup_device:
   description: "Выполняет полную настройку устройства"
   sequence:
     - service: switch.turn_on
-      entity_id: switch.marvel_tribe_auto_sync_time
+      entity_id: switch.marvel_tribe_audio
     - service: switch.turn_on
       entity_id: switch.marvel_tribe_rgb_light
     - service: select.select_option

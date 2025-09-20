@@ -76,10 +76,10 @@ template:
             mdi:alert-circle
           {% endif %}
 
-      - name: "Marvel Tribe - Время на часах"
+      - name: "Marvel Tribe - Последнее обновление"
         state: >
-          {{ states('sensor.marvel_tribe_device_time') }}
-        icon: mdi:clock
+          {{ states('sensor.marvel_tribe_last_update') }}
+        icon: mdi:update
 
       - name: "Marvel Tribe - RGB статус"
         state: >
@@ -113,7 +113,7 @@ template:
 recorder:
   include:
     entities:
-      - sensor.marvel_tribe_connection_status
+      - sensor.marvel_tribe_last_update
       - number.marvel_tribe_rgb_brightness
       - number.marvel_tribe_lcd_brightness
       - binary_sensor.marvel_tribe_wifi_connected
@@ -234,9 +234,9 @@ lovelace:
 
 # homeassistant:
 #   customize:
-#     sensor.marvel_tribe_connection_status:
-#       friendly_name: "Статус подключения"
-#       icon: mdi:wifi
+#     sensor.marvel_tribe_last_update:
+#       friendly_name: "Последнее обновление"
+#       icon: mdi:update
 #     
 #     switch.marvel_tribe_rgb_light:
 #       friendly_name: "RGB подсветка"
