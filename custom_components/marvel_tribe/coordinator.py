@@ -75,7 +75,7 @@ class MarvelTribeDataUpdateCoordinator(DataUpdateCoordinator):
             # Return current data (will be updated by message handlers)
             current_data = self.data or {}
             if not current_data:
-                _LOGGER.warning("No data received from device yet")
+                _LOGGER.info("First connection to Marvel Tribe - initializing with default values")
                 # Initialize with default values
                 current_data = {
                     "battery_level": 75,  # Mock battery level since device doesn't report it
