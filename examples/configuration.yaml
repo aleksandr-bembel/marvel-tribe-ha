@@ -17,7 +17,6 @@ group:
   marvel_tribe_sensors:
     name: "Marvel Tribe - Сенсоры"
     entities:
-      - sensor.marvel_tribe_device_time
       - sensor.marvel_tribe_firmware_version
       - sensor.marvel_tribe_wifi_ssid
       - sensor.marvel_tribe_ip_address
@@ -181,7 +180,6 @@ script:
             IP: {{ states('sensor.marvel_tribe_ip_address') }}
             RGB: {{ 'Включена' if is_state('binary_sensor.marvel_tribe_rgb_enabled', 'on') else 'Выключена' }}
             LCD: {{ states('number.marvel_tribe_lcd_brightness') }}%
-            Время устройства: {{ states('sensor.marvel_tribe_device_time') }}
             Последнее обновление: {{ states('sensor.marvel_tribe_last_update') }}
           title: "Marvel Tribe - Статус"
 

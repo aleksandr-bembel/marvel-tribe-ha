@@ -28,7 +28,6 @@ async def async_setup_entry(
 
     sensors = [
         # Основные сенсоры
-        MarvelTribeDeviceTimeSensor(coordinator, entry, "device_time"),
         MarvelTribeFirmwareVersionSensor(coordinator, entry, "firmware_version"),
         # WiFi (только основное)
         MarvelTribeWiFiSSIDSensor(coordinator, entry, "wifi_ssid"),
@@ -85,28 +84,6 @@ class MarvelTribeSensor(SensorEntity):
         self.async_on_remove(
             self.coordinator.async_add_listener(self.async_write_ha_state)
         )
-
-
-class MarvelTribeDeviceTimeSensor(MarvelTribeSensor):
-    """Device time sensor."""
-
-    _attr_name = "Device Time"
-    _attr_icon = "mdi:clock-digital"
-
-    @property
-    def native_value(self) -> str | None:
-        """Return the device time."""
-        data = self.coordinator.data
-        if data:
-            return data.get("device_time")
-
-    @property
-    def extra_state_attributes(self) -> dict[str, str]:
-        """Return extra state attributes."""
-        data = self.coordinator.data or {}
-        return {
-            "timezone": data.get("timezone", ""),
-        }
 
 
 class MarvelTribeFirmwareVersionSensor(MarvelTribeSensor):
