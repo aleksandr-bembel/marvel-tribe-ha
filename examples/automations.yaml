@@ -1,20 +1,23 @@
 # Примеры автоматизации для Marvel Tribe
 # Скопируйте нужные автоматизации в ваш файл automations.yaml
 
-# Включение автосинхронизации времени при заходе солнца
-- id: marvel_tribe_night_mode
-  alias: "Marvel Tribe - Ночной режим"
-  description: "Включает автосинхронизацию времени при заходе солнца"
+# Активация ночного режима при заходе солнца
+- id: marvel_tribe_sunset_night_mode
+  alias: "Marvel Tribe - Ночной режим на закате"
+  description: "Активирует ночной режим при заходе солнца"
   trigger:
     - platform: sun
       event: sunset
       offset: "-00:30:00"  # За 30 минут до захода солнца
   action:
     - service: switch.turn_on
-      entity_id: switch.marvel_tribe_auto_sync_time
+      entity_id: switch.marvel_tribe_auto_sleep
+    - service: number.set_value
+      entity_id: number.marvel_tribe_lcd_brightness
+      value: 20
     - service: notify.persistent_notification
       data:
-        message: "Автосинхронизация времени включена для ночного режима"
+        message: "Ночной режим Marvel Tribe активирован"
         title: "Marvel Tribe"
   mode: single
 
@@ -92,10 +95,10 @@
         title: "Marvel Tribe"
   mode: single
 
-# Ежедневная синхронизация времени
-- id: marvel_tribe_daily_sync
-  alias: "Marvel Tribe - Ежедневная синхронизация"
-  description: "Синхронизирует время каждый день в 2:00"
+# Ежедневная активация Auto Sleep
+- id: marvel_tribe_daily_auto_sleep
+  alias: "Marvel Tribe - Ежедневный Auto Sleep"
+  description: "Включает Auto Sleep режим каждый день в 2:00"
   trigger:
     - platform: time
       at: "02:00:00"
@@ -105,11 +108,11 @@
       state: "on"
   action:
     - service: switch.turn_on
-      entity_id: switch.marvel_tribe_auto_sync_time
+      entity_id: switch.marvel_tribe_auto_sleep
     - service: notify.persistent_notification
       data:
-        message: "Автосинхронизация времени Marvel Tribe включена"
-        title: "Marvel Tribe - Синхронизация"
+        message: "Auto Sleep режим Marvel Tribe включен"
+        title: "Marvel Tribe - Режим сна"
   mode: single
 
 # Уведомление об отключении WiFi

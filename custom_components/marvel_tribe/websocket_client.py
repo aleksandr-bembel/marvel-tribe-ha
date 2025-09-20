@@ -198,38 +198,10 @@ class MarvelTribeWebSocketClient:
     async def _handle_protocol_message(self, command: int, data: dict):
         """Handle Marvel Tribe protocol message."""
         try:
-            if command == self.command_id["get_user_property"]:
-                await self._handle_device_properties(data)
-            elif command == self.command_id["wifi"]:
-                await self._handle_wifi_message(data)
-            elif command == self.command_id["characteristic"]:
-                await self._handle_device_characteristics(data)
-            elif command == self.command_id["factory"]:
-                await self._handle_factory_message(data)
-            else:
-                _LOGGER.debug("Unhandled protocol command: %s", command)
+            # All protocol messages are handled by coordinator's marvel_tribe_data handler
+            _LOGGER.debug("Protocol command %s: %s", command, data)
         except Exception as err:
             _LOGGER.error("Error handling protocol message: %s", err)
-
-    async def _handle_device_properties(self, data: dict):
-        """Handle device properties response."""
-        _LOGGER.debug("Device properties: %s", data)
-        # Process device configuration data
-        
-    async def _handle_wifi_message(self, data: dict):
-        """Handle WiFi related messages."""
-        _LOGGER.debug("WiFi message: %s", data)
-        # Process WiFi scan results, connection status, etc.
-        
-    async def _handle_device_characteristics(self, data: dict):
-        """Handle device characteristics."""
-        _LOGGER.debug("Device characteristics: %s", data)
-        # Process device info like screen size, style count, etc.
-        
-    async def _handle_factory_message(self, data: dict):
-        """Handle factory/OTA related messages."""
-        _LOGGER.debug("Factory message: %s", data)
-        # Process OTA updates, device info, etc.
 
     async def _handle_disconnect(self):
         """Handle disconnection."""
@@ -330,34 +302,9 @@ class MarvelTribeWebSocketClient:
             _LOGGER.error("Failed to send property command: %s", err)
             return False
 
-    async def scan_wifi(self) -> bool:
-        """Scan for WiFi networks."""
-        return await self.send_wifi_command("scan_ap")
-
-    async def get_device_info(self) -> bool:
-        """Get device characteristics."""
-        return await self.send_protocol_command("characteristic")
-
     async def get_all_properties(self) -> bool:
         """Get all device properties."""
         return await self.send_property_command("get_user_property", "all")
-
-    # Protocol methods - these will be refined during reverse engineering
-    async def ping(self) -> bool:
-        """Send ping message."""
-        try:
-            if not self.connected or not self.websocket:
-                _LOGGER.error("Not connected to device")
-                return False
-            
-            # Send a simple ping message - try different formats
-            ping_msg = {"ping": 1}
-            await self.websocket.send(json.dumps(ping_msg))
-            _LOGGER.debug("Sent ping message: %s", ping_msg)
-            return True
-        except Exception as err:
-            _LOGGER.error("Failed to send ping: %s", err)
-            return False
 
     async def get_status(self) -> bool:
         """Request device status."""
@@ -371,22 +318,3 @@ class MarvelTribeWebSocketClient:
         """Request current time."""
         return await self.send_property_command("get_user_property", "time")
 
-    async def set_time(self, timestamp: float) -> bool:
-        """Set device time."""
-        try:
-            if not self.connected or not self.websocket:
-                _LOGGER.error("Not connected to device")
-                return False
-            
-            # Send time setting command
-            time_msg = {
-                "command": self.command_id["set_user_property"],
-                "property": self.property_id["time"],
-                "value": int(timestamp)
-            }
-            await self.websocket.send(json.dumps(time_msg))
-            _LOGGER.debug("Sent time setting command: %s", time_msg)
-            return True
-        except Exception as err:
-            _LOGGER.error("Failed to set time: %s", err)
-            return False
