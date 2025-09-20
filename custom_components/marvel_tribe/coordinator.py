@@ -36,6 +36,9 @@ class MarvelTribeDataUpdateCoordinator(DataUpdateCoordinator):
         # Cache for avoiding too frequent requests
         self._last_request_time = 0
         self._request_cache_timeout = 2  # seconds
+        
+        # Protection for local state changes
+        self._protected_keys = {}  # key -> expiry_time
 
         super().__init__(
             hass,
@@ -180,12 +183,22 @@ class MarvelTribeDataUpdateCoordinator(DataUpdateCoordinator):
             # Ambient light info (property 7)
             if "7" in message:
                 rgb_info = message["7"]
-                current_data.update({
-                    "rgb_enabled": rgb_info.get("enable", False),
+                rgb_updates = {}
+                
+                # Only update rgb_enabled if it's not protected
+                if not self.is_key_protected("rgb_enabled"):
+                    rgb_updates["rgb_enabled"] = rgb_info.get("enable", False)
+                else:
+                    _LOGGER.debug("Skipping rgb_enabled update - key is protected")
+                
+                # Other RGB properties can be updated normally
+                rgb_updates.update({
                     "rgb_brightness": rgb_info.get("brightness", 0),
                     "rgb_speed": rgb_info.get("speed", 0),
                     "rgb_effect": rgb_info.get("effect", 0),
                 })
+                
+                current_data.update(rgb_updates)
             
             # WiFi info (property 8)
             if "8" in message:
@@ -267,6 +280,25 @@ class MarvelTribeDataUpdateCoordinator(DataUpdateCoordinator):
         
         self.data = current_data
         _LOGGER.debug("Updated Marvel Tribe data: %s", current_data)
+
+    def protect_state_key(self, key: str, duration: float = 2.0):
+        """Protect a state key from being overwritten for a duration."""
+        import time
+        self._protected_keys[key] = time.time() + duration
+        _LOGGER.debug("Protected key %s for %.1f seconds", key, duration)
+    
+    def is_key_protected(self, key: str) -> bool:
+        """Check if a key is currently protected."""
+        import time
+        if key not in self._protected_keys:
+            return False
+        
+        if time.time() > self._protected_keys[key]:
+            # Protection expired
+            del self._protected_keys[key]
+            return False
+        
+        return True
 
     async def async_shutdown(self):
         """Shutdown the coordinator."""

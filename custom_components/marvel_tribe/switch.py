@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import asyncio
 import logging
 
 from homeassistant.components.switch import SwitchEntity
@@ -98,13 +99,18 @@ class MarvelTribeAmbientLightSwitch(MarvelTribeSwitch):
             )
             if success:
                 _LOGGER.info("ambient light light turned on")
-                # Update local state immediately
+                # Update local state immediately and protect it
                 if self.coordinator.data:
                     self.coordinator.data["rgb_enabled"] = True
+                    self.coordinator.protect_state_key("rgb_enabled", 3.0)  # Protect for 3 seconds
+                # Update entity state immediately
+                self.async_write_ha_state()
+                # Wait a bit for device to process the command
+                await asyncio.sleep(0.5)
                 # Request updated data from device
                 await self.coordinator.async_request_refresh()
-                # Update entity state
-                self.async_write_ha_state()
+                # Force update all listeners (including binary sensors)
+                self.coordinator.async_update_listeners()
             else:
                 _LOGGER.error("Failed to turn on ambient light light")
         except Exception as err:
@@ -130,13 +136,18 @@ class MarvelTribeAmbientLightSwitch(MarvelTribeSwitch):
             )
             if success:
                 _LOGGER.info("ambient light light turned off")
-                # Update local state immediately
+                # Update local state immediately and protect it
                 if self.coordinator.data:
                     self.coordinator.data["rgb_enabled"] = False
+                    self.coordinator.protect_state_key("rgb_enabled", 3.0)  # Protect for 3 seconds
+                # Update entity state immediately
+                self.async_write_ha_state()
+                # Wait a bit for device to process the command
+                await asyncio.sleep(0.5)
                 # Request updated data from device
                 await self.coordinator.async_request_refresh()
-                # Update entity state
-                self.async_write_ha_state()
+                # Force update all listeners (including binary sensors)
+                self.coordinator.async_update_listeners()
             else:
                 _LOGGER.error("Failed to turn off ambient light light")
         except Exception as err:
