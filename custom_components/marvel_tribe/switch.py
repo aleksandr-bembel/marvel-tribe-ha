@@ -171,14 +171,32 @@ class MarvelTribeAudioSwitch(MarvelTribeSwitch):
     async def async_turn_on(self, **kwargs) -> None:
         """Turn on audio."""
         try:
-            # Send command to enable audio
+            # Get current audio config and update enable field
+            current_data = self.coordinator.data or {}
+            audio_config = {
+                "enable": True,
+                "volume_key": current_data.get("volume_key", 50),
+                "volume_startup": current_data.get("volume_startup", 50),
+                "volume_alarm": current_data.get("volume_alarm", 50),
+            }
+            
             success = await self.coordinator.client.send_property_command(
-                "set_user_property", "audio", {"enable": True}
+                "set_user_property", "audio", audio_config
             )
             if success:
                 _LOGGER.info("Audio turned on")
-                # Request updated data
+                # Update local state immediately and protect it
+                if self.coordinator.data:
+                    self.coordinator.data["audio_enabled"] = True
+                    self.coordinator.protect_state_key("audio_enabled", 3.0)
+                # Update entity state immediately
+                self.async_write_ha_state()
+                # Wait a bit for device to process the command
+                await asyncio.sleep(0.5)
+                # Request updated data from device
                 await self.coordinator.async_request_refresh()
+                # Force update all listeners
+                self.coordinator.async_update_listeners()
             else:
                 _LOGGER.error("Failed to turn on audio")
         except Exception as err:
@@ -187,14 +205,32 @@ class MarvelTribeAudioSwitch(MarvelTribeSwitch):
     async def async_turn_off(self, **kwargs) -> None:
         """Turn off audio."""
         try:
-            # Send command to disable audio
+            # Get current audio config and update enable field
+            current_data = self.coordinator.data or {}
+            audio_config = {
+                "enable": False,
+                "volume_key": current_data.get("volume_key", 50),
+                "volume_startup": current_data.get("volume_startup", 50),
+                "volume_alarm": current_data.get("volume_alarm", 50),
+            }
+            
             success = await self.coordinator.client.send_property_command(
-                "set_user_property", "audio", {"enable": False}
+                "set_user_property", "audio", audio_config
             )
             if success:
                 _LOGGER.info("Audio turned off")
-                # Request updated data
+                # Update local state immediately and protect it
+                if self.coordinator.data:
+                    self.coordinator.data["audio_enabled"] = False
+                    self.coordinator.protect_state_key("audio_enabled", 3.0)
+                # Update entity state immediately
+                self.async_write_ha_state()
+                # Wait a bit for device to process the command
+                await asyncio.sleep(0.5)
+                # Request updated data from device
                 await self.coordinator.async_request_refresh()
+                # Force update all listeners
+                self.coordinator.async_update_listeners()
             else:
                 _LOGGER.error("Failed to turn off audio")
         except Exception as err:

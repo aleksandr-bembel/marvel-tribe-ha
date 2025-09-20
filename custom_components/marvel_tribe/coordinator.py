@@ -212,12 +212,22 @@ class MarvelTribeDataUpdateCoordinator(DataUpdateCoordinator):
             # Audio info (property 9)
             if "9" in message:
                 audio_info = message["9"]
-                current_data.update({
-                    "audio_enabled": audio_info.get("enable", False),
+                audio_updates = {}
+                
+                # Only update audio_enabled if it's not protected
+                if not self.is_key_protected("audio_enabled"):
+                    audio_updates["audio_enabled"] = audio_info.get("enable", False)
+                else:
+                    _LOGGER.debug("Skipping audio_enabled update - key is protected")
+                
+                # Other audio properties can be updated normally
+                audio_updates.update({
                     "volume_key": audio_info.get("volume_key", 0),
                     "volume_startup": audio_info.get("volume_startup", 0),
                     "volume_alarm": audio_info.get("volume_alarm", 0),
                 })
+                
+                current_data.update(audio_updates)
             
             # LCD info (property 12)
             if "12" in message:
