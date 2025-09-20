@@ -76,27 +76,22 @@ class MarvelTribeWebSocketClient:
     async def test_connection(self) -> bool:
         """Test WebSocket connection."""
         try:
+            _LOGGER.debug("Testing connection to %s", self.ws_url)
             async with websockets.connect(
                 self.ws_url, 
-                ping_interval=None,  # Disable ping for testing
-                close_timeout=5
+                ping_interval=None,
+                close_timeout=3,
+                open_timeout=10
             ) as websocket:
-                # Send a test message to verify connection
-                test_message = {"type": "ping", "data": {}}
-                await websocket.send(json.dumps(test_message))
-                
-                # Try to receive a response
-                try:
-                    response = await asyncio.wait_for(websocket.recv(), timeout=5.0)
-                    _LOGGER.info("Test connection successful. Response: %s", response)
-                    return True
-                except asyncio.TimeoutError:
-                    _LOGGER.warning("No response to test message, but connection established")
-                    return True
+                _LOGGER.info("Test connection successful to %s", self.ws_url)
+                return True
                     
+        except websockets.exceptions.InvalidStatus as err:
+            _LOGGER.error("WebSocket connection rejected: %s", err)
+            raise ConnectionError(f"Device rejected connection: {err}")
         except Exception as err:
             _LOGGER.error("Test connection failed: %s", err)
-            raise
+            raise ConnectionError(f"Cannot connect to device: {err}")
 
     async def connect(self) -> bool:
         """Connect to WebSocket."""

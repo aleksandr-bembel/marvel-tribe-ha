@@ -36,6 +36,12 @@ class MarvelTribeConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         errors: dict[str, str] = {}
 
         if user_input is not None:
+            errors = {}
+            
+            # Check if already configured first
+            await self.async_set_unique_id(f"{user_input[CONF_HOST]}:{user_input[CONF_PORT]}")
+            self._abort_if_unique_id_configured()
+            
             # Test connection
             try:
                 client = MarvelTribeWebSocketClient(
@@ -44,16 +50,15 @@ class MarvelTribeConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                 await client.test_connection()
                 await client.disconnect()
                 
-                # Check if already configured
-                await self.async_set_unique_id(f"{user_input[CONF_HOST]}:{user_input[CONF_PORT]}")
-                self._abort_if_unique_id_configured()
-                
                 return self.async_create_entry(
                     title=user_input[CONF_NAME], data=user_input
                 )
-            except Exception as err:
-                _LOGGER.error("Error connecting to Marvel Tribe: %s", err)
+            except ConnectionError:
+                _LOGGER.error("Cannot connect to Marvel Tribe at %s:%s", user_input[CONF_HOST], user_input[CONF_PORT])
                 errors["base"] = "cannot_connect"
+            except Exception as err:
+                _LOGGER.error("Unexpected error connecting to Marvel Tribe: %s", err)
+                errors["base"] = "unknown"
 
         return self.async_show_form(
             step_id="user", data_schema=STEP_USER_DATA_SCHEMA, errors=errors
