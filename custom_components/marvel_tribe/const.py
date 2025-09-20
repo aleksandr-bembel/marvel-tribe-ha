@@ -9,7 +9,7 @@ CONF_PORT = "port"
 CONF_NAME = "name"
 
 # Default values
-DEFAULT_HOST = "192.168.0.57"
+DEFAULT_HOST = "192.168.1.100"
 DEFAULT_PORT = 80
 DEFAULT_NAME = "Marvel Tribe Watch"
 
