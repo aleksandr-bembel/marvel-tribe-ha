@@ -98,7 +98,7 @@ marvel_tribe/
 - `number.marvel_tribe_volume_alarm` - громкость будильника (0-100%)
 
 ### 🎨 Выбор режимов (1 штука)
-- `select.marvel_tribe_rgb_effect` - ambient light эффект (Rainbow/Flow/Breath/Mono)
+- `select.marvel_tribe_rgb_effect` - ambient light эффект (Flow/Breath/Mono/Rainbow)
 
 ### 🔘 Двоичные сенсоры (5 штук)
 - `binary_sensor.marvel_tribe_wifi_connected` - статус WiFi подключения
