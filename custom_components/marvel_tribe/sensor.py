@@ -325,10 +325,25 @@ class MarvelTribeLastUpdateSensor(MarvelTribeSensor):
     def extra_state_attributes(self) -> dict[str, any]:
         """Return extra state attributes."""
         data = self.coordinator.data or {}
-        last_update_time = getattr(self.coordinator, 'last_update_success', None)
-        return {
-            "coordinator_last_update": last_update_time.isoformat() if last_update_time else None,
-            "data_age_seconds": (datetime.now() - last_update_time).total_seconds() if last_update_time else None,
-            "update_count": getattr(self.coordinator, 'update_count', 0),
-            "failed_count": getattr(self.coordinator, 'failed_count', 0),
+        
+        # Get coordinator status
+        last_update_success = getattr(self.coordinator, 'last_update_success', False)
+        update_interval = getattr(self.coordinator, 'update_interval', None)
+        
+        attributes = {
+            "coordinator_status": "success" if last_update_success else "failed",
+            "update_interval_seconds": update_interval.total_seconds() if update_interval else None,
         }
+        
+        # Try to get last update time from data
+        if data and "last_update" in data:
+            try:
+                last_update_str = data["last_update"]
+                # Parse the ISO format time
+                last_update_dt = datetime.fromisoformat(last_update_str.replace('Z', '+00:00'))
+                age_seconds = (datetime.now() - last_update_dt.replace(tzinfo=None)).total_seconds()
+                attributes["data_age_seconds"] = round(age_seconds, 1)
+            except (ValueError, TypeError, AttributeError):
+                attributes["data_age_seconds"] = None
+        
+        return attributes
